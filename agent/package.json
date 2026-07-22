@@ -1,0 +1,16 @@
+{
+  "name": "ai-loop-agent",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/entrypoint.js",
+  "scripts": {
+    "start": "node src/entrypoint.js"
+  },
+  "dependencies": {
+    "@azure/identity": "^4.4.1",
+    "@azure/keyvault-secrets": "^4.9.0",
+    "@azure/storage-queue": "^12.24.0",
+    "jsonwebtoken": "^9.0.2"
+  }
+}
