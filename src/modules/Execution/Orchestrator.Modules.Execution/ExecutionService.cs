@@ -272,13 +272,11 @@ public sealed class ExecutionService(
 
         try
         {
-            await adapter.TransitionStateAsync(
-                message.Project,
-                message.Repo,
-                message.ItemId,
-                message.OnFailureState,
-                cancellationToken
-            );
+            // Comment first, transition second. On a workflow-constrained tracker the failure state
+            // can be genuinely unreachable from the item's current status -- Jira moves status only
+            // through transitions valid from where the item already is (jira-adapter design.md D5).
+            // These used to share a try in this order reversed, so a failed transition skipped the
+            // comment entirely and the item was left with neither a new state nor an explanation.
             await adapter.PostCommentAsync(
                 message.Project,
                 message.Repo,
@@ -286,6 +284,31 @@ public sealed class ExecutionService(
                 BuildFailureComment(message, reason, output),
                 cancellationToken
             );
+
+            try
+            {
+                await adapter.TransitionStateAsync(
+                    message.Project,
+                    message.Repo,
+                    message.ItemId,
+                    message.OnFailureState,
+                    cancellationToken
+                );
+            }
+            catch (Exception transitionFailure)
+            {
+                // Context on an already-recorded failure, never a replacement for it: the outcome is
+                // emitted above and the comment is already posted, so the run is fully accounted for
+                // and the item carries its explanation. Rethrowing would replace the real cause with
+                // a downstream symptom.
+                ExecutionLog.FailureTransitionUnavailable(
+                    logger,
+                    message.Repo,
+                    message.ItemId,
+                    message.OnFailureState,
+                    transitionFailure.Message
+                );
+            }
         }
         finally
         {

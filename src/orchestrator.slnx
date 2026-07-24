@@ -29,6 +29,9 @@
   <Folder Name="/modules/AzureDevOps/">
     <Project Path="modules/AzureDevOps/Orchestrator.Modules.AzureDevOps/Orchestrator.Modules.AzureDevOps.csproj" />
   </Folder>
+  <Folder Name="/modules/Jira/">
+    <Project Path="modules/Jira/Orchestrator.Modules.Jira/Orchestrator.Modules.Jira.csproj" />
+  </Folder>
   <Folder Name="/modules/Dispatch/">
     <Project Path="modules/Dispatch/Orchestrator.Modules.Dispatch.Contracts/Orchestrator.Modules.Dispatch.Contracts.csproj" />
     <Project Path="modules/Dispatch/Orchestrator.Modules.Dispatch/Orchestrator.Modules.Dispatch.csproj" />
@@ -51,6 +54,9 @@
   </Folder>
   <Folder Name="/tests/modules/GitLab/">
     <Project Path="tests/modules/GitLab/Orchestrator.Modules.GitLab.UnitTests/Orchestrator.Modules.GitLab.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/tests/modules/Jira/">
+    <Project Path="tests/modules/Jira/Orchestrator.Modules.Jira.UnitTests/Orchestrator.Modules.Jira.UnitTests.csproj" />
   </Folder>
   <Folder Name="/tests/modules/AzureDevOps/">
     <Project Path="tests/modules/AzureDevOps/Orchestrator.Modules.AzureDevOps.UnitTests/Orchestrator.Modules.AzureDevOps.UnitTests.csproj" />

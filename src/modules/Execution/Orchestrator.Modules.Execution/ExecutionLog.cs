@@ -5,7 +5,11 @@ namespace Orchestrator.Modules.Execution;
 /// <summary>Source-generated Execution logging. EventId range: 1300-1399.</summary>
 static partial class ExecutionLog
 {
-    [LoggerMessage(EventId = 1300, Level = LogLevel.Information, Message = "Queue empty, nothing to do")]
+    [LoggerMessage(
+        EventId = 1300,
+        Level = LogLevel.Information,
+        Message = "Queue empty, nothing to do"
+    )]
     public static partial void QueueEmpty(ILogger logger);
 
     [LoggerMessage(
@@ -62,6 +66,22 @@ static partial class ExecutionLog
         Message = "{Repo}#{ItemId} failed: {Reason}"
     )]
     public static partial void RunFailed(ILogger logger, string repo, string itemId, string reason);
+
+    /// <summary>Additional context on an already-recorded failure, never a cause of its own. On a
+    /// workflow-constrained tracker the failure state can be genuinely unreachable from the item's
+    /// current status (jira-adapter design.md D5), so this is an expected outcome rather than a bug.</summary>
+    [LoggerMessage(
+        EventId = 1308,
+        Level = LogLevel.Warning,
+        Message = "Could not move {Repo}#{ItemId} to {OnFailureState}, leaving state unchanged: {Reason}"
+    )]
+    public static partial void FailureTransitionUnavailable(
+        ILogger logger,
+        string repo,
+        string itemId,
+        string onFailureState,
+        string reason
+    );
 
     /// <summary>
     /// The <c>dispatch.outcome</c> half of the normalized lifecycle contract

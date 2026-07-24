@@ -108,6 +108,34 @@ public class ExecutionService_Should_Constraint
     }
 
     [Fact]
+    public async Task RunOnceAsync_Should_StillCommentWhenTheFailureTransitionIsUnreachable()
+    {
+        // Jira moves status only through a transition valid from where the item already is, so the
+        // configured failure state can be genuinely unreachable. The comment is the diagnostic a human
+        // needs, so it must survive: an item left in place *with* an explanation beats an item left
+        // with neither a new state nor a reason (jira-adapter design.md D5).
+        var message = Message();
+        var reader = FakeWorkItemQueueReader.WithMessage(message);
+        var adapter = new FakeVendorAdapter(Vendor.GitHub, message.State)
+        {
+            TransitionFailure = "no transition reaches 'status:blocked'",
+        };
+        var runner = new FakeRuntimeRunner
+        {
+            NextResult = new RuntimeRunResult(1, false, "the command failed"),
+        };
+
+        await BuildService(reader, adapter, runner).RunOnceAsync();
+
+        adapter.Comments.ShouldHaveSingleItem();
+        adapter.Comments[0].ShouldContain("the command failed");
+        // The transition was attempted and did not take effect; the state is left as it was.
+        adapter.Transitions.ShouldBeEmpty();
+        // And the run is still fully accounted for rather than crashing the replica.
+        reader.Deleted.ShouldHaveSingleItem();
+    }
+
+    [Fact]
     public async Task RunOnceAsync_Should_FailWithoutRunningAnyCommandWhenCodeHostIsUnregistered()
     {
         // Tracker resolves, code host does not -- a mapping or version-skew bug. It takes the same

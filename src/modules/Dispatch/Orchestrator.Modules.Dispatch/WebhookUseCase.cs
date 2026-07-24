@@ -135,6 +135,9 @@ public sealed class WebhookUseCase : IUseCase
             case "azure-devops":
                 vendor = Vendor.AzureDevOps;
                 return true;
+            case "jira":
+                vendor = Vendor.Jira;
+                return true;
             default:
                 vendor = default;
                 return false;

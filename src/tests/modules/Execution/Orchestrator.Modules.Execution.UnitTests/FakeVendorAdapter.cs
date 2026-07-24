@@ -13,6 +13,11 @@ sealed class FakeVendorAdapter(Vendor vendor, string liveState) : IBacklogAdapte
     public List<Transition> Transitions { get; } = [];
     public List<string> Comments { get; } = [];
 
+    /// <summary>Simulates a workflow-constrained tracker where the requested state is not reachable
+    /// from the item's current status — Jira's transition model makes this a legitimate outcome rather
+    /// than an error (jira-adapter design.md D5).</summary>
+    public string? TransitionFailure { get; init; }
+
     public Vendor Vendor { get; } = vendor;
 
     public bool VerifyWebhook(
@@ -42,6 +47,11 @@ sealed class FakeVendorAdapter(Vendor vendor, string liveState) : IBacklogAdapte
         CancellationToken cancellationToken = default
     )
     {
+        if (TransitionFailure is not null)
+        {
+            throw new InvalidOperationException(TransitionFailure);
+        }
+
         Transitions.Add(new Transition(project, repo, itemId, newState));
         return Task.CompletedTask;
     }
