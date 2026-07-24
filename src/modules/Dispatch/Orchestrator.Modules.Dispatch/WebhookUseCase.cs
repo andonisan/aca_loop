@@ -1,10 +1,10 @@
-using Orchestrator.BuildingBlocks.Modules;
-using Orchestrator.Constants;
-using Orchestrator.Modules.Backlog.Contracts;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
+using Orchestrator.BuildingBlocks.Modules;
+using Orchestrator.Constants;
+using Orchestrator.Modules.Backlog.Contracts;
 
 namespace Orchestrator.Modules.Dispatch;
 
@@ -26,7 +26,7 @@ public sealed class WebhookUseCase : IUseCase
     internal static async Task<IResult> HandleAsync(
         string vendor,
         HttpContext httpContext,
-        IEnumerable<IVendorAdapter> adapters,
+        IEnumerable<IBacklogAdapter> adapters,
         IMappingProvider mappingProvider,
         IWorkItemQueue queue,
         ILogger<WebhookUseCase> logger,
@@ -48,12 +48,11 @@ public sealed class WebhookUseCase : IUseCase
         await httpContext.Request.Body.CopyToAsync(bodyStream, cancellationToken);
         var rawBody = bodyStream.ToArray();
 
-        var headers = httpContext
-            .Request.Headers.ToDictionary(
-                h => h.Key,
-                h => h.Value.ToString(),
-                StringComparer.OrdinalIgnoreCase
-            );
+        var headers = httpContext.Request.Headers.ToDictionary(
+            h => h.Key,
+            h => h.Value.ToString(),
+            StringComparer.OrdinalIgnoreCase
+        );
 
         if (!adapter.VerifyWebhook(rawBody, headers))
         {
@@ -94,7 +93,13 @@ public sealed class WebhookUseCase : IUseCase
             canonicalEvent.NativeState,
             stateMapping!.Action,
             stateMapping.Runtime.ToString(),
-            stateMapping.OnFailureState
+            stateMapping.OnFailureState,
+            // Defaulted to the tracker here: the mapping does not yet declare per-target codeHost/
+            // codeRepo (jira-adapter tasks 2.1-2.3). Every current target is its own code host, so
+            // these defaults are exactly today's behavior, and group 2 replaces them with the
+            // resolved mapping values rather than changing what a single-vendor target does.
+            CodeHost: canonicalEvent.Vendor,
+            CodeRepo: canonicalEvent.Repo
         );
 
         await queue.EnqueueAsync(message, cancellationToken);

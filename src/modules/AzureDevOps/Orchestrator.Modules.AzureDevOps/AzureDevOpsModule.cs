@@ -1,8 +1,8 @@
-using Orchestrator.BuildingBlocks.Modules;
-using Orchestrator.Modules.Backlog.Contracts;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Orchestrator.BuildingBlocks.Modules;
+using Orchestrator.Modules.Backlog.Contracts;
 
 namespace Orchestrator.Modules.AzureDevOps;
 
@@ -12,13 +12,18 @@ public sealed class AzureDevOpsModule : WorkerModuleBase
 {
     public override void Add(IServiceCollection services, IConfiguration configuration)
     {
-        services.Configure<AzureDevOpsOptions>(configuration.GetSection(AzureDevOpsOptions.SectionName));
+        services.Configure<AzureDevOpsOptions>(
+            configuration.GetSection(AzureDevOpsOptions.SectionName)
+        );
 
-        services.AddHttpClient<IVendorAdapter, AzureDevOpsAdapter>(
+        // One instance, both contracts -- see GitHubModule for why the forwards are transient.
+        services.AddHttpClient<AzureDevOpsAdapter>(
             (sp, client) =>
                 client.BaseAddress = new Uri(
                     $"https://dev.azure.com/{sp.GetRequiredService<IOptions<AzureDevOpsOptions>>().Value.Organization}"
                 )
         );
+        services.AddTransient<IBacklogAdapter>(sp => sp.GetRequiredService<AzureDevOpsAdapter>());
+        services.AddTransient<ICodeHostAdapter>(sp => sp.GetRequiredService<AzureDevOpsAdapter>());
     }
 }

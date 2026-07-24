@@ -15,7 +15,9 @@ namespace Orchestrator.Modules.AzureDevOps;
 /// ignored. Write-back sets the work item's <c>System.State</c> field directly (single-valued by
 /// construction, unlike GitHub/GitLab's label-based invariant — design.md D4).
 /// </summary>
-sealed class AzureDevOpsAdapter(HttpClient httpClient, IOptions<AzureDevOpsOptions> options) : IVendorAdapter
+sealed class AzureDevOpsAdapter(HttpClient httpClient, IOptions<AzureDevOpsOptions> options)
+    : IBacklogAdapter,
+        ICodeHostAdapter
 {
     const string ApiVersion = "7.1";
 
@@ -23,7 +25,10 @@ sealed class AzureDevOpsAdapter(HttpClient httpClient, IOptions<AzureDevOpsOptio
 
     public Vendor Vendor => Vendor.AzureDevOps;
 
-    public bool VerifyWebhook(ReadOnlyMemory<byte> rawBody, IReadOnlyDictionary<string, string> headers)
+    public bool VerifyWebhook(
+        ReadOnlyMemory<byte> rawBody,
+        IReadOnlyDictionary<string, string> headers
+    )
     {
         if (!headers.TryGetValue("Authorization", out var authorization))
         {
@@ -78,8 +83,16 @@ sealed class AzureDevOpsAdapter(HttpClient httpClient, IOptions<AzureDevOpsOptio
             : null;
 
         var actor = resource.TryGetProperty("revisedBy", out var revisedBy)
-            ? (revisedBy.TryGetProperty("uniqueName", out var uniqueName) ? uniqueName.GetString() : null)
-                ?? (revisedBy.TryGetProperty("displayName", out var displayName) ? displayName.GetString() : null)
+            ? (
+                revisedBy.TryGetProperty("uniqueName", out var uniqueName)
+                    ? uniqueName.GetString()
+                    : null
+            )
+                ?? (
+                    revisedBy.TryGetProperty("displayName", out var displayName)
+                        ? displayName.GetString()
+                        : null
+                )
             : null;
 
         if (project is null)
@@ -98,7 +111,8 @@ sealed class AzureDevOpsAdapter(HttpClient httpClient, IOptions<AzureDevOpsOptio
     }
 
     public bool IsAutomationActor(string? actor) =>
-        actor is not null && string.Equals(actor, _options.BotIdentity, StringComparison.OrdinalIgnoreCase);
+        actor is not null
+        && string.Equals(actor, _options.BotIdentity, StringComparison.OrdinalIgnoreCase);
 
     public async Task<string> ReadItemStateAsync(
         string? project,
@@ -123,7 +137,15 @@ sealed class AzureDevOpsAdapter(HttpClient httpClient, IOptions<AzureDevOpsOptio
     ) =>
         await PatchAsync(
             $"/_apis/wit/workitems/{itemId}?api-version={ApiVersion}",
-            new object[] { new { op = "add", path = "/fields/System.State", value = newState } },
+            new object[]
+            {
+                new
+                {
+                    op = "add",
+                    path = "/fields/System.State",
+                    value = newState,
+                },
+            },
             cancellationToken
         );
 
@@ -155,6 +177,13 @@ sealed class AzureDevOpsAdapter(HttpClient httpClient, IOptions<AzureDevOpsOptio
             )
         );
 
+    /// <summary>The variable the Azure CLI's devops extension reads for PAT auth. Azure DevOps had
+    /// no CLI token at all before this — Execution's env-var switch covered only GitHub and GitLab,
+    /// so an ADO run could clone (credentials are in the clone URL) but any `az repos`/`az boards`
+    /// call in the target repo's command was unauthenticated (jira-adapter design.md D6).</summary>
+    public IReadOnlyDictionary<string, string> GetCliEnvironment(CloneCredentials credentials) =>
+        new Dictionary<string, string> { ["AZURE_DEVOPS_EXT_PAT"] = credentials.Token };
+
     static AuthenticationHeaderValue BuildPatAuthHeader(string pat) =>
         new("Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes($":{pat}")));
 
@@ -167,7 +196,9 @@ sealed class AzureDevOpsAdapter(HttpClient httpClient, IOptions<AzureDevOpsOptio
         if (!response.IsSuccessStatusCode)
         {
             var body = await response.Content.ReadAsStringAsync(cancellationToken);
-            throw new InvalidOperationException($"GET {path} failed: {(int)response.StatusCode} {body}");
+            throw new InvalidOperationException(
+                $"GET {path} failed: {(int)response.StatusCode} {body}"
+            );
         }
 
         return await JsonDocument.ParseAsync(
@@ -182,14 +213,18 @@ sealed class AzureDevOpsAdapter(HttpClient httpClient, IOptions<AzureDevOpsOptio
         {
             Content = JsonContent.Create(body),
         };
-        request.Content!.Headers.ContentType = new MediaTypeHeaderValue("application/json-patch+json");
+        request.Content!.Headers.ContentType = new MediaTypeHeaderValue(
+            "application/json-patch+json"
+        );
         request.Headers.Authorization = BuildPatAuthHeader(_options.PersonalAccessToken);
 
         using var response = await httpClient.SendAsync(request, cancellationToken);
         if (!response.IsSuccessStatusCode)
         {
             var body2 = await response.Content.ReadAsStringAsync(cancellationToken);
-            throw new InvalidOperationException($"PATCH {path} failed: {(int)response.StatusCode} {body2}");
+            throw new InvalidOperationException(
+                $"PATCH {path} failed: {(int)response.StatusCode} {body2}"
+            );
         }
     }
 
@@ -200,7 +235,10 @@ sealed class AzureDevOpsAdapter(HttpClient httpClient, IOptions<AzureDevOpsOptio
         CancellationToken cancellationToken
     )
     {
-        using var request = new HttpRequestMessage(method, path) { Content = JsonContent.Create(body) };
+        using var request = new HttpRequestMessage(method, path)
+        {
+            Content = JsonContent.Create(body),
+        };
         request.Headers.Authorization = BuildPatAuthHeader(_options.PersonalAccessToken);
 
         using var response = await httpClient.SendAsync(request, cancellationToken);

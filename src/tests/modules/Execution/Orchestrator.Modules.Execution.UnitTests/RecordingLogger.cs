@@ -26,10 +26,9 @@ sealed class RecordingLogger<T> : ILogger<T>
         Func<TState, Exception?, string> formatter
     )
     {
-        var fields =
-            state is IReadOnlyList<KeyValuePair<string, object?>> values
-                ? values.ToDictionary(pair => pair.Key, pair => pair.Value)
-                : [];
+        var fields = state is IReadOnlyList<KeyValuePair<string, object?>> values
+            ? values.ToDictionary(pair => pair.Key, pair => pair.Value)
+            : [];
 
         records.Add(new RecordedLog(eventId.Id, fields));
     }
@@ -44,5 +43,6 @@ sealed class RecordingLogger<T> : ILogger<T>
 
 sealed record RecordedLog(int EventId, IReadOnlyDictionary<string, object?> Fields)
 {
-    public string? Field(string name) => Fields.TryGetValue(name, out var value) ? value?.ToString() : null;
+    public string? Field(string name) =>
+        Fields.TryGetValue(name, out var value) ? value?.ToString() : null;
 }

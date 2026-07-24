@@ -1,6 +1,6 @@
+using Microsoft.Extensions.Options;
 using Orchestrator.Constants;
 using Orchestrator.Modules.Backlog.Contracts;
-using Microsoft.Extensions.Options;
 using Shouldly;
 
 namespace Orchestrator.Modules.Execution.UnitTests;
@@ -17,7 +17,10 @@ public class LifecycleOutcomeEvents_Should_Constraint
 
     static readonly ExecutionOptions DefaultOptions = new() { ReplicaTimeoutSeconds = 60 };
 
-    static CanonicalMessage Message(string runtime = "Claude", string state = "status:ready-for-proposal") =>
+    static CanonicalMessage Message(
+        string runtime = "Claude",
+        string state = "status:ready-for-proposal"
+    ) =>
         new(
             Vendor.GitHub,
             Project: null,
@@ -26,7 +29,9 @@ public class LifecycleOutcomeEvents_Should_Constraint
             State: state,
             Action: "/ds:propose",
             Runtime: runtime,
-            OnFailureState: "status:blocked"
+            OnFailureState: "status:blocked",
+            CodeHost: Vendor.GitHub,
+            CodeRepo: "acme/widgets"
         );
 
     static (ExecutionService Service, RecordingLogger<ExecutionService> Logger) BuildService(
@@ -38,6 +43,7 @@ public class LifecycleOutcomeEvents_Should_Constraint
         var logger = new RecordingLogger<ExecutionService>();
         var service = new ExecutionService(
             reader,
+            [adapter],
             [adapter],
             runner,
             Options.Create(DefaultOptions),
@@ -87,7 +93,9 @@ public class LifecycleOutcomeEvents_Should_Constraint
 
         // No message owned means no run happened -- an empty-queue wake-up must not show up in the
         // read model as a run at all.
-        logger.Records.ShouldNotContain(record => record.Field("EventName") == LifecycleEvents.Outcome);
+        logger.Records.ShouldNotContain(record =>
+            record.Field("EventName") == LifecycleEvents.Outcome
+        );
     }
 
     [Fact]
@@ -189,9 +197,10 @@ public class LifecycleOutcomeEvents_Should_Constraint
         var (service, logger) = BuildService(
             FakeWorkItemQueueReader.WithMessage(message),
             new FakeVendorAdapter(Vendor.GitHub, message.State),
-            new SequencedRuntimeRunner(
-                [cloneOk, new RuntimeRunResult(1, false, "refusing: WIP limit reached")]
-            )
+            new SequencedRuntimeRunner([
+                cloneOk,
+                new RuntimeRunResult(1, false, "refusing: WIP limit reached"),
+            ])
         );
 
         await service.RunOnceAsync();

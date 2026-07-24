@@ -15,7 +15,9 @@ namespace Orchestrator.Modules.GitHub;
 /// self-filtering, label write-back preserving the single-status-label invariant, and per-run
 /// installation-token minting.
 /// </summary>
-sealed class GitHubAdapter(HttpClient httpClient, IOptions<GitHubOptions> options) : IVendorAdapter
+sealed class GitHubAdapter(HttpClient httpClient, IOptions<GitHubOptions> options)
+    : IBacklogAdapter,
+        ICodeHostAdapter
 {
     const string GitHubApiVersion = "2022-11-28";
     const string StatusLabelPrefix = "status:";
@@ -24,7 +26,10 @@ sealed class GitHubAdapter(HttpClient httpClient, IOptions<GitHubOptions> option
 
     public Vendor Vendor => Vendor.GitHub;
 
-    public bool VerifyWebhook(ReadOnlyMemory<byte> rawBody, IReadOnlyDictionary<string, string> headers)
+    public bool VerifyWebhook(
+        ReadOnlyMemory<byte> rawBody,
+        IReadOnlyDictionary<string, string> headers
+    )
     {
         if (!headers.TryGetValue("X-Hub-Signature-256", out var signatureHeader))
         {
@@ -82,7 +87,8 @@ sealed class GitHubAdapter(HttpClient httpClient, IOptions<GitHubOptions> option
     }
 
     public bool IsAutomationActor(string? actor) =>
-        actor is not null && string.Equals(actor, _options.BotLogin, StringComparison.OrdinalIgnoreCase);
+        actor is not null
+        && string.Equals(actor, _options.BotLogin, StringComparison.OrdinalIgnoreCase);
 
     public async Task<string> ReadItemStateAsync(
         string? project,
@@ -155,9 +161,21 @@ sealed class GitHubAdapter(HttpClient httpClient, IOptions<GitHubOptions> option
         );
     }
 
+    /// <summary>Both variables because the target repo's command may drive either <c>gh</c>
+    /// (<c>GH_TOKEN</c>) or a tool reading the conventional <c>GITHUB_TOKEN</c>.</summary>
+    public IReadOnlyDictionary<string, string> GetCliEnvironment(CloneCredentials credentials) =>
+        new Dictionary<string, string>
+        {
+            ["GH_TOKEN"] = credentials.Token,
+            ["GITHUB_TOKEN"] = credentials.Token,
+        };
+
     /// <summary>Mints an installation token scoped to the single target repository — short-lived
     /// (&lt;=1h, GitHub-enforced) and never persisted.</summary>
-    async Task<string> GetInstallationTokenAsync(string repoFullName, CancellationToken cancellationToken)
+    async Task<string> GetInstallationTokenAsync(
+        string repoFullName,
+        CancellationToken cancellationToken
+    )
     {
         var repoName = repoFullName.Split('/')[1];
         var jwt = BuildAppJwt();
@@ -200,7 +218,10 @@ sealed class GitHubAdapter(HttpClient httpClient, IOptions<GitHubOptions> option
         {
             IssuedAt = now.AddSeconds(-60),
             Expires = now.AddSeconds(540),
-            Claims = new Dictionary<string, object> { [JwtRegisteredClaimNames.Iss] = _options.AppId },
+            Claims = new Dictionary<string, object>
+            {
+                [JwtRegisteredClaimNames.Iss] = _options.AppId,
+            },
             SigningCredentials = new SigningCredentials(
                 new RsaSecurityKey(rsa) { KeyId = _options.AppId },
                 SecurityAlgorithms.RsaSha256
@@ -231,7 +252,11 @@ sealed class GitHubAdapter(HttpClient httpClient, IOptions<GitHubOptions> option
         ];
     }
 
-    async Task<JsonDocument> GetAsync(string token, string path, CancellationToken cancellationToken)
+    async Task<JsonDocument> GetAsync(
+        string token,
+        string path,
+        CancellationToken cancellationToken
+    )
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, path);
         request.Headers.Authorization = new("Bearer", token);
@@ -242,7 +267,9 @@ sealed class GitHubAdapter(HttpClient httpClient, IOptions<GitHubOptions> option
         if (!response.IsSuccessStatusCode)
         {
             var body = await response.Content.ReadAsStringAsync(cancellationToken);
-            throw new InvalidOperationException($"GET {path} failed: {(int)response.StatusCode} {body}");
+            throw new InvalidOperationException(
+                $"GET {path} failed: {(int)response.StatusCode} {body}"
+            );
         }
 
         return await JsonDocument.ParseAsync(
@@ -259,7 +286,10 @@ sealed class GitHubAdapter(HttpClient httpClient, IOptions<GitHubOptions> option
         CancellationToken cancellationToken
     )
     {
-        using var request = new HttpRequestMessage(method, path) { Content = JsonContent.Create(body) };
+        using var request = new HttpRequestMessage(method, path)
+        {
+            Content = JsonContent.Create(body),
+        };
         request.Headers.Authorization = new("Bearer", token);
         request.Headers.Add("Accept", "application/vnd.github+json");
         request.Headers.Add("X-GitHub-Api-Version", GitHubApiVersion);

@@ -1,9 +1,9 @@
 using System.Diagnostics;
 using System.Text.RegularExpressions;
-using Orchestrator.Constants;
-using Orchestrator.Modules.Backlog.Contracts;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Orchestrator.Constants;
+using Orchestrator.Modules.Backlog.Contracts;
 
 namespace Orchestrator.Modules.Execution;
 
@@ -16,7 +16,8 @@ namespace Orchestrator.Modules.Execution;
 /// </summary>
 public sealed class ExecutionService(
     IWorkItemQueueReader queueReader,
-    IEnumerable<IVendorAdapter> adapters,
+    IEnumerable<IBacklogAdapter> adapters,
+    IEnumerable<ICodeHostAdapter> codeHostAdapters,
     IRuntimeRunner runtimeRunner,
     IOptions<ExecutionOptions> options,
     ILogger<ExecutionService> logger
@@ -25,11 +26,12 @@ public sealed class ExecutionService(
     /// <summary>The ACA-injected execution name, or a local marker off-platform — see
     /// <see cref="LifecycleOutcomes.LogPointerEnvironmentVariable"/>. Read once: it is fixed for
     /// the lifetime of a job execution.</summary>
-    static readonly string LogPointer =
-        Environment.GetEnvironmentVariable(LifecycleOutcomes.LogPointerEnvironmentVariable)
+    static readonly string LogPointer = Environment.GetEnvironmentVariable(
+        LifecycleOutcomes.LogPointerEnvironmentVariable
+    )
         is { Length: > 0 } pointer
-            ? pointer
-            : LifecycleOutcomes.LocalLogPointer;
+        ? pointer
+        : LifecycleOutcomes.LocalLogPointer;
 
     public async Task RunOnceAsync(CancellationToken cancellationToken = default)
     {
@@ -69,7 +71,13 @@ public sealed class ExecutionService(
         var adapter = adapters.FirstOrDefault(a => a.Vendor == message.Vendor);
         if (adapter is null)
         {
-            ExecutionLog.PoisonMessage(logger, received.DequeueCount, message.Vendor.ToString(), message.Repo, message.ItemId);
+            ExecutionLog.PoisonMessage(
+                logger,
+                received.DequeueCount,
+                message.Vendor.ToString(),
+                message.Repo,
+                message.ItemId
+            );
             EmitOutcome(message, LifecycleOutcomes.Poison, elapsed);
             await queueReader.DeleteAsync(received, cancellationToken);
             return;
@@ -107,13 +115,41 @@ public sealed class ExecutionService(
         // mapping; this only guards against message tampering or a version-skew bug.
         if (!Enum.TryParse<AgentRuntime>(message.Runtime, ignoreCase: true, out var runtime))
         {
-            await FailAsync(adapter, message, received, $"unknown runtime '{message.Runtime}'", "", elapsed, cancellationToken);
+            await FailAsync(
+                adapter,
+                message,
+                received,
+                $"unknown runtime '{message.Runtime}'",
+                "",
+                elapsed,
+                cancellationToken
+            );
             return;
         }
 
-        var credentials = await adapter.GetCloneCredentialsAsync(
+        // The code host is a coordinate of its own, not the tracker: a Jira-tracked item can live in
+        // a GitHub repo (jira-adapter design.md D6). Resolved through the same failure contract as an
+        // unknown runtime rather than poisoning -- like that check, a message naming an unregistered
+        // code host is a mapping or version-skew bug a human needs to see on the item, and the
+        // tracker adapter is available to write it back.
+        var codeHost = codeHostAdapters.FirstOrDefault(a => a.Vendor == message.CodeHost);
+        if (codeHost is null)
+        {
+            await FailAsync(
+                adapter,
+                message,
+                received,
+                $"unknown code host '{message.CodeHost}'",
+                "",
+                elapsed,
+                cancellationToken
+            );
+            return;
+        }
+
+        var credentials = await codeHost.GetCloneCredentialsAsync(
             message.Project,
-            message.Repo,
+            message.CodeRepo,
             cancellationToken
         );
 
@@ -128,16 +164,12 @@ public sealed class ExecutionService(
             ["GIT_COMMITTER_EMAIL"] = credentials.GitAuthorEmail,
         };
         // Vendor CLI auth env vars, not just git's -- so `gh` never sees a GitLab token or vice
-        // versa (the target repo's own command drives whichever CLI its vendor needs).
-        switch (message.Vendor)
+        // versa (the target repo's own command drives whichever CLI its host needs). Owned by the
+        // code-host adapter rather than switched on here, which is how Azure DevOps shipped with no
+        // CLI token at all: this switch had cases for GitHub and GitLab only.
+        foreach (var (key, value) in codeHost.GetCliEnvironment(credentials))
         {
-            case Vendor.GitHub:
-                environment["GH_TOKEN"] = credentials.Token;
-                environment["GITHUB_TOKEN"] = credentials.Token;
-                break;
-            case Vendor.GitLab:
-                environment["GITLAB_TOKEN"] = credentials.Token;
-                break;
+            environment[key] = value;
         }
 
         var cloneResult = await runtimeRunner.RunAsync(
@@ -189,7 +221,13 @@ public sealed class ExecutionService(
             return;
         }
 
-        if (Regex.IsMatch(result.Output, executionOptions.WipRefusalPattern, RegexOptions.IgnoreCase))
+        if (
+            Regex.IsMatch(
+                result.Output,
+                executionOptions.WipRefusalPattern,
+                RegexOptions.IgnoreCase
+            )
+        )
         {
             ExecutionLog.WipRefused(logger, message.Repo, message.ItemId);
             await adapter.PostCommentAsync(
@@ -208,11 +246,19 @@ public sealed class ExecutionService(
         var reason = result.TimedOut
             ? $"timed out after {timeoutSeconds}s"
             : $"exited with code {result.ExitCode}";
-        await FailAsync(adapter, message, received, reason, result.Output, elapsed, cancellationToken);
+        await FailAsync(
+            adapter,
+            message,
+            received,
+            reason,
+            result.Output,
+            elapsed,
+            cancellationToken
+        );
     }
 
     async Task FailAsync(
-        IVendorAdapter adapter,
+        IBacklogAdapter adapter,
         CanonicalMessage message,
         ReceivedWorkItem received,
         string reason,

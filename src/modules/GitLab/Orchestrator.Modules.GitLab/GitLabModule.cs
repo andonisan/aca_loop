@@ -1,8 +1,8 @@
-using Orchestrator.BuildingBlocks.Modules;
-using Orchestrator.Modules.Backlog.Contracts;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Orchestrator.BuildingBlocks.Modules;
+using Orchestrator.Modules.Backlog.Contracts;
 
 namespace Orchestrator.Modules.GitLab;
 
@@ -14,11 +14,14 @@ public sealed class GitLabModule : WorkerModuleBase
     {
         services.Configure<GitLabOptions>(configuration.GetSection(GitLabOptions.SectionName));
 
-        services.AddHttpClient<IVendorAdapter, GitLabAdapter>(
+        // One instance, both contracts -- see GitHubModule for why the forwards are transient.
+        services.AddHttpClient<GitLabAdapter>(
             (sp, client) =>
                 client.BaseAddress = new Uri(
                     $"{sp.GetRequiredService<IOptions<GitLabOptions>>().Value.BaseUrl.TrimEnd('/')}/api/v4/"
                 )
         );
+        services.AddTransient<IBacklogAdapter>(sp => sp.GetRequiredService<GitLabAdapter>());
+        services.AddTransient<ICodeHostAdapter>(sp => sp.GetRequiredService<GitLabAdapter>());
     }
 }

@@ -14,7 +14,9 @@ namespace Orchestrator.Modules.GitLab;
 /// a static shared-secret header (<c>X-Gitlab-Token</c>), not HMAC. State write-back reuses the
 /// same "swap the status:* label" convention as GitHub (backlog-abstraction spec).
 /// </summary>
-sealed class GitLabAdapter(HttpClient httpClient, IOptions<GitLabOptions> options) : IVendorAdapter
+sealed class GitLabAdapter(HttpClient httpClient, IOptions<GitLabOptions> options)
+    : IBacklogAdapter,
+        ICodeHostAdapter
 {
     const string StatusLabelPrefix = "status:";
 
@@ -22,7 +24,10 @@ sealed class GitLabAdapter(HttpClient httpClient, IOptions<GitLabOptions> option
 
     public Vendor Vendor => Vendor.GitLab;
 
-    public bool VerifyWebhook(ReadOnlyMemory<byte> rawBody, IReadOnlyDictionary<string, string> headers)
+    public bool VerifyWebhook(
+        ReadOnlyMemory<byte> rawBody,
+        IReadOnlyDictionary<string, string> headers
+    )
     {
         if (!headers.TryGetValue("X-Gitlab-Token", out var token))
         {
@@ -89,12 +94,14 @@ sealed class GitLabAdapter(HttpClient httpClient, IOptions<GitLabOptions> option
     }
 
     static IReadOnlyCollection<string> LabelTitles(JsonElement labelsChange, string propertyName) =>
-        labelsChange.TryGetProperty(propertyName, out var array) && array.ValueKind == JsonValueKind.Array
+        labelsChange.TryGetProperty(propertyName, out var array)
+        && array.ValueKind == JsonValueKind.Array
             ? [.. array.EnumerateArray().Select(l => l.GetProperty("title").GetString()!)]
             : [];
 
     public bool IsAutomationActor(string? actor) =>
-        actor is not null && string.Equals(actor, _options.BotUsername, StringComparison.OrdinalIgnoreCase);
+        actor is not null
+        && string.Equals(actor, _options.BotUsername, StringComparison.OrdinalIgnoreCase);
 
     public async Task<string> ReadItemStateAsync(
         string? project,
@@ -160,12 +167,25 @@ sealed class GitLabAdapter(HttpClient httpClient, IOptions<GitLabOptions> option
         );
     }
 
-    async Task<string[]> GetIssueLabelsAsync(string repo, string itemId, CancellationToken cancellationToken)
+    public IReadOnlyDictionary<string, string> GetCliEnvironment(CloneCredentials credentials) =>
+        new Dictionary<string, string> { ["GITLAB_TOKEN"] = credentials.Token };
+
+    async Task<string[]> GetIssueLabelsAsync(
+        string repo,
+        string itemId,
+        CancellationToken cancellationToken
+    )
     {
-        using var document = await GetAsync($"/projects/{Encode(repo)}/issues/{itemId}", cancellationToken);
+        using var document = await GetAsync(
+            $"/projects/{Encode(repo)}/issues/{itemId}",
+            cancellationToken
+        );
         return
         [
-            .. document.RootElement.GetProperty("labels").EnumerateArray().Select(l => l.GetString()!),
+            .. document
+                .RootElement.GetProperty("labels")
+                .EnumerateArray()
+                .Select(l => l.GetString()!),
         ];
     }
 
@@ -178,7 +198,9 @@ sealed class GitLabAdapter(HttpClient httpClient, IOptions<GitLabOptions> option
         if (!response.IsSuccessStatusCode)
         {
             var body = await response.Content.ReadAsStringAsync(cancellationToken);
-            throw new InvalidOperationException($"GET {path} failed: {(int)response.StatusCode} {body}");
+            throw new InvalidOperationException(
+                $"GET {path} failed: {(int)response.StatusCode} {body}"
+            );
         }
 
         return await JsonDocument.ParseAsync(
@@ -187,9 +209,17 @@ sealed class GitLabAdapter(HttpClient httpClient, IOptions<GitLabOptions> option
         );
     }
 
-    async Task SendAsync(HttpMethod method, string path, object body, CancellationToken cancellationToken)
+    async Task SendAsync(
+        HttpMethod method,
+        string path,
+        object body,
+        CancellationToken cancellationToken
+    )
     {
-        using var request = new HttpRequestMessage(method, path) { Content = JsonContent.Create(body) };
+        using var request = new HttpRequestMessage(method, path)
+        {
+            Content = JsonContent.Create(body),
+        };
         request.Headers.Add("PRIVATE-TOKEN", _options.AccessToken);
 
         using var response = await httpClient.SendAsync(request, cancellationToken);

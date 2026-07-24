@@ -1,7 +1,7 @@
 using System.Text;
+using Microsoft.AspNetCore.Http;
 using Orchestrator.Constants;
 using Orchestrator.Modules.Backlog.Contracts;
-using Microsoft.AspNetCore.Http;
 using Shouldly;
 
 namespace Orchestrator.Modules.Dispatch.UnitTests;
@@ -36,12 +36,15 @@ public class LifecycleEnqueuedEvent_Should_Constraint
     );
 
     static HttpContext EmptyBodyContext() =>
-        new DefaultHttpContext { Request = { Body = new MemoryStream(Encoding.UTF8.GetBytes("{}")) } };
+        new DefaultHttpContext
+        {
+            Request = { Body = new MemoryStream(Encoding.UTF8.GetBytes("{}")) },
+        };
 
-    static async Task<(RecordingLogger<WebhookUseCase> Logger, FakeWorkItemQueue Queue)> HandleAsync(
-        CanonicalEvent? parsed,
-        FakeWorkItemQueue? queue = null
-    )
+    static async Task<(
+        RecordingLogger<WebhookUseCase> Logger,
+        FakeWorkItemQueue Queue
+    )> HandleAsync(CanonicalEvent? parsed, FakeWorkItemQueue? queue = null)
     {
         var logger = new RecordingLogger<WebhookUseCase>();
         var workQueue = queue ?? new FakeWorkItemQueue();
@@ -88,7 +91,10 @@ public class LifecycleEnqueuedEvent_Should_Constraint
     public async Task HandleAsync_Should_EmitNoEnqueuedEventForAnUnmappedState()
     {
         var (logger, queue) = await HandleAsync(
-            GatedEvent with { NativeState = "status:in-progress" }
+            GatedEvent with
+            {
+                NativeState = "status:in-progress",
+            }
         );
 
         // Dropped as "not a gate state" -- nothing was handed off, so nothing may appear in history.
@@ -113,7 +119,10 @@ public class LifecycleEnqueuedEvent_Should_Constraint
         public List<CanonicalMessage> Enqueued { get; } = [];
         public bool Throw { get; init; }
 
-        public Task EnqueueAsync(CanonicalMessage message, CancellationToken cancellationToken = default)
+        public Task EnqueueAsync(
+            CanonicalMessage message,
+            CancellationToken cancellationToken = default
+        )
         {
             if (Throw)
             {
@@ -125,14 +134,18 @@ public class LifecycleEnqueuedEvent_Should_Constraint
         }
     }
 
-    sealed class FakeVendorAdapter(Vendor vendor) : IVendorAdapter
+    /// <summary>Tracker-only, which is all Dispatch consumes: the webhook path never mints
+    /// credentials, so this fake has no reason to implement <c>ICodeHostAdapter</c>.</summary>
+    sealed class FakeVendorAdapter(Vendor vendor) : IBacklogAdapter
     {
         public CanonicalEvent? Parsed { get; init; }
 
         public Vendor Vendor { get; } = vendor;
 
-        public bool VerifyWebhook(ReadOnlyMemory<byte> rawBody, IReadOnlyDictionary<string, string> headers) =>
-            true;
+        public bool VerifyWebhook(
+            ReadOnlyMemory<byte> rawBody,
+            IReadOnlyDictionary<string, string> headers
+        ) => true;
 
         public CanonicalEvent? ParseEvent(
             ReadOnlyMemory<byte> rawBody,
@@ -161,12 +174,6 @@ public class LifecycleEnqueuedEvent_Should_Constraint
             string repo,
             string itemId,
             string body,
-            CancellationToken cancellationToken = default
-        ) => throw new NotSupportedException();
-
-        public Task<CloneCredentials> GetCloneCredentialsAsync(
-            string? project,
-            string repo,
             CancellationToken cancellationToken = default
         ) => throw new NotSupportedException();
     }

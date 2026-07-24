@@ -2,15 +2,23 @@ using Orchestrator.Modules.Backlog.Contracts;
 
 namespace Orchestrator.Modules.Execution.UnitTests;
 
-sealed class FakeVendorAdapter(Vendor vendor, string liveState) : IVendorAdapter
+/// <summary>Stands in for a vendor that is both tracker and code host, which is what every
+/// currently-shipping vendor is. A tracker-only fake would implement <c>IBacklogAdapter</c> alone.</summary>
+sealed class FakeVendorAdapter(Vendor vendor, string liveState) : IBacklogAdapter, ICodeHostAdapter
 {
-    public List<(string? Project, string Repo, string ItemId, string NewState)> Transitions { get; } = [];
+    /// <summary>A named record rather than a tuple: the inline tuple form pushed the declaration past
+    /// the print width, and CSharpier's wrapping of it is rejected by this repo's IDE0055 rule.</summary>
+    internal sealed record Transition(string? Project, string Repo, string ItemId, string NewState);
+
+    public List<Transition> Transitions { get; } = [];
     public List<string> Comments { get; } = [];
 
     public Vendor Vendor { get; } = vendor;
 
-    public bool VerifyWebhook(ReadOnlyMemory<byte> rawBody, IReadOnlyDictionary<string, string> headers) =>
-        true;
+    public bool VerifyWebhook(
+        ReadOnlyMemory<byte> rawBody,
+        IReadOnlyDictionary<string, string> headers
+    ) => true;
 
     public CanonicalEvent? ParseEvent(
         ReadOnlyMemory<byte> rawBody,
@@ -34,7 +42,7 @@ sealed class FakeVendorAdapter(Vendor vendor, string liveState) : IVendorAdapter
         CancellationToken cancellationToken = default
     )
     {
-        Transitions.Add((project, repo, itemId, newState));
+        Transitions.Add(new Transition(project, repo, itemId, newState));
         return Task.CompletedTask;
     }
 
@@ -63,4 +71,7 @@ sealed class FakeVendorAdapter(Vendor vendor, string liveState) : IVendorAdapter
                 GitAuthorEmail: "fake-bot@example.com"
             )
         );
+
+    public IReadOnlyDictionary<string, string> GetCliEnvironment(CloneCredentials credentials) =>
+        new Dictionary<string, string> { ["FAKE_TOKEN"] = credentials.Token };
 }

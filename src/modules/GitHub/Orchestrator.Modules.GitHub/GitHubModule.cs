@@ -1,7 +1,7 @@
-using Orchestrator.BuildingBlocks.Modules;
-using Orchestrator.Modules.Backlog.Contracts;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Orchestrator.BuildingBlocks.Modules;
+using Orchestrator.Modules.Backlog.Contracts;
 
 namespace Orchestrator.Modules.GitHub;
 
@@ -16,8 +16,13 @@ public sealed class GitHubModule : WorkerModuleBase
     {
         services.Configure<GitHubOptions>(configuration.GetSection(GitHubOptions.SectionName));
 
-        services.AddHttpClient<IVendorAdapter, GitHubAdapter>(client =>
+        // Registered as the concrete type once, then forwarded to both contracts, so a single
+        // adapter instance serves the tracker and code-host roles. Forwards are transient to match
+        // AddHttpClient's lifetime -- a singleton forward would capture a transient HttpClient.
+        services.AddHttpClient<GitHubAdapter>(client =>
             client.BaseAddress = new Uri(GitHubApiBaseUrl)
         );
+        services.AddTransient<IBacklogAdapter>(sp => sp.GetRequiredService<GitHubAdapter>());
+        services.AddTransient<ICodeHostAdapter>(sp => sp.GetRequiredService<GitHubAdapter>());
     }
 }

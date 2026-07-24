@@ -13,8 +13,10 @@ The vendor seam SHALL expose two contracts: a backlog-tracker contract (webhook 
 - **WHEN** a vendor is both a tracker and a git host
 - **THEN** its module implements both contracts and behaves identically to before this separation
 
-### Requirement: Code-host coordinates on the canonical model
-The canonical event and canonical queue message SHALL carry code-host coordinates (the code host vendor and its repository coordinate) distinct from the tracker coordinates. Execution SHALL resolve the tracker contract for gate re-validation and write-back, and the code-host contract for clone credentials and CLI token environment, from those separate coordinates.
+### Requirement: Code-host coordinates on the canonical queue message
+The canonical queue message SHALL carry code-host coordinates (the code host vendor and its repository coordinate) distinct from the tracker coordinates. Execution SHALL resolve the tracker contract for gate re-validation and write-back, and the code-host contract for clone credentials and CLI token environment, from those separate coordinates.
+
+The canonical **event** MUST NOT carry code-host coordinates. An adapter parsing a webhook knows its own tracker but not the target's configured code host, which is mapping configuration; the coordinates SHALL therefore be resolved from the mapping by dispatch and merged into the message. A tracker-only adapter MUST NOT be required to supply a value it cannot know.
 
 #### Scenario: Tracker and code host differ
 - **WHEN** a message carries a Jira tracker coordinate and a GitHub code-host coordinate
@@ -23,6 +25,10 @@ The canonical event and canonical queue message SHALL carry code-host coordinate
 #### Scenario: Tracker and code host are the same vendor
 - **WHEN** a message carries the same vendor as both tracker and code host
 - **THEN** both resolutions select that vendor's module and behavior is unchanged from before the separation
+
+#### Scenario: Adapters do not supply code-host coordinates
+- **WHEN** any vendor adapter parses a webhook into a canonical event
+- **THEN** the event carries only tracker coordinates, and dispatch supplies the code-host coordinates from the resolved target mapping
 
 ### Requirement: Every code host contributes its CLI token environment
 Each code-host implementation SHALL contribute the environment variables its vendor's CLI requires for authentication, so a run never receives another vendor's token and never lacks its own. This contribution SHALL be part of the code-host contract rather than a branch inside execution.
@@ -38,7 +44,7 @@ Each code-host implementation SHALL contribute the environment variables its ven
 ## MODIFIED Requirements
 
 ### Requirement: Canonical work-item event normalization
-Each vendor adapter (GitHub, Azure DevOps, GitLab, Jira) SHALL normalize its native state-change notification into a canonical event `{vendor, project, repo, item_id, native_state, actor, code_host, code_repo}`. Components downstream of an adapter MUST NOT contain vendor-specific logic or parse vendor payloads. For a tracker that is not repo-anchored, the tracker's own coordinates SHALL identify the item and the code-host coordinates SHALL identify the repository.
+Each vendor adapter (GitHub, Azure DevOps, GitLab, Jira) SHALL normalize its native state-change notification into a canonical event `{vendor, project, repo, item_id, native_state, actor}`. Components downstream of an adapter MUST NOT contain vendor-specific logic or parse vendor payloads. For a tracker that is not repo-anchored, the tracker's project coordinate SHALL identify the item's container and the repo coordinate SHALL be empty.
 
 #### Scenario: GitHub issue labeled
 - **WHEN** a GitHub `issues` webhook with `action == "labeled"` arrives
@@ -54,7 +60,7 @@ Each vendor adapter (GitHub, Azure DevOps, GitLab, Jira) SHALL normalize its nat
 
 #### Scenario: Jira issue status changed
 - **WHEN** a `jira:issue_updated` webhook arrives whose changelog contains a `status` change
-- **THEN** the Jira adapter emits a canonical event with `vendor: jira`, the Jira project key as the project coordinate, the issue key as `item_id`, the new status name as `native_state`, and the target's configured code-host coordinates
+- **THEN** the Jira adapter emits a canonical event with `vendor: jira`, the Jira project key as the project coordinate, an empty repo coordinate, the issue key as `item_id`, and the new status name as `native_state`
 
 #### Scenario: Non-state-change events are dropped
 - **WHEN** a webhook arrives that does not represent a state change (e.g. GitHub `action == "opened"`, an Azure DevOps update not touching `System.State`, a Jira changelog not touching `status`)

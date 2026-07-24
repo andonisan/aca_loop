@@ -1,12 +1,18 @@
 namespace Orchestrator.Modules.Backlog.Contracts;
 
 /// <summary>
-/// One implementation per backlog vendor (GitHub, GitLab, Azure DevOps). Everything a vendor
-/// module needs to expose to be usable by Dispatch (Receiver) and Execution (Agent) — see
-/// design.md D1. Implementations self-register their <c>IModule</c> keyed by <see cref="Vendor"/>;
-/// resolve the right adapter for a message via <c>IEnumerable&lt;IVendorAdapter&gt;</c> + <see cref="Vendor"/>.
+/// The tracker half of a vendor: everything needed to observe and write an item's lifecycle state.
+/// One implementation per backlog vendor that hosts work items (GitHub, GitLab, Azure DevOps, Jira).
+/// Implementations self-register keyed by <see cref="Vendor"/>; resolve the right one for a message
+/// via <c>IEnumerable&lt;IBacklogAdapter&gt;</c> + the message's tracker <see cref="Vendor"/>.
+/// <para>
+/// Deliberately separate from <see cref="ICodeHostAdapter"/>: a tracker need not host git. Jira is a
+/// tracker and not a code host, so it implements this interface only — and the absence of a
+/// code-host implementation is a compile-time fact rather than a method that throws at runtime
+/// (jira-adapter design.md D6).
+/// </para>
 /// </summary>
-public interface IVendorAdapter
+public interface IBacklogAdapter
 {
     Vendor Vendor { get; }
 
@@ -16,7 +22,10 @@ public interface IVendorAdapter
 
     /// <summary>Parses a verified webhook payload into a <see cref="CanonicalEvent"/>, or null if the
     /// payload does not represent a lifecycle-state change (e.g. an unrelated event type/action).</summary>
-    CanonicalEvent? ParseEvent(ReadOnlyMemory<byte> rawBody, IReadOnlyDictionary<string, string> headers);
+    CanonicalEvent? ParseEvent(
+        ReadOnlyMemory<byte> rawBody,
+        IReadOnlyDictionary<string, string> headers
+    );
 
     /// <summary>True when the given actor is this automation's own identity for the vendor (bot
     /// login, service account), so its own write-backs never re-trigger dispatch.</summary>
@@ -32,7 +41,7 @@ public interface IVendorAdapter
     );
 
     /// <summary>Writes a state transition back to the vendor using its native mechanism (label swap,
-    /// work item state field), preserving the single-state invariant.</summary>
+    /// work item state field, workflow transition), preserving the single-state invariant.</summary>
     Task TransitionStateAsync(
         string? project,
         string repo,
@@ -46,13 +55,6 @@ public interface IVendorAdapter
         string repo,
         string itemId,
         string body,
-        CancellationToken cancellationToken = default
-    );
-
-    /// <summary>Mints short-lived, per-run credentials for cloning and pushing to the target repo.</summary>
-    Task<CloneCredentials> GetCloneCredentialsAsync(
-        string? project,
-        string repo,
         CancellationToken cancellationToken = default
     );
 }
