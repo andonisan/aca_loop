@@ -10,7 +10,7 @@ The v1 stack in this repo (`ai-loop-aca-job`, deployed and verified) implements 
 
 What is *not* general: vendor (GitHub only, `github.js` in both services), the state model (label strings compared verbatim), the state→action mapping (an `if` on two labels), and the tenancy model (one repo, one App installation).
 
-The product brief ([`DOCS/products/orquestador-agentico-backlog.md`](../../../DOCS/products/orquestador-agentico-backlog.md)) asks for: Azure DevOps + GitHub + GitLab, a configurable state→action engine, runtime selection as configuration, same AI-pod dispatch on Azure Container Apps.
+The product brief ([`docs/products/orquestador-agentico-backlog.md`](../../../docs/products/orquestador-agentico-backlog.md)) asks for: Azure DevOps + GitHub + GitLab, a configurable state→action engine, runtime selection as configuration, same AI-pod dispatch on Azure Container Apps.
 
 ## Goals / Non-Goals
 

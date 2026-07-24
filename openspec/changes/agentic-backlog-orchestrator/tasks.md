@@ -40,6 +40,6 @@
 
 ## 6. Close-out
 
-- [ ] 6.1 Update `README.md` and `DOCS/products/orquestador-agentico-backlog.md` to reflect the implemented product (vendors supported, mapping config reference, deployment steps per vendor)
+- [ ] 6.1 Update `README.md` and `docs/products/orquestador-agentico-backlog.md` to reflect the implemented product (vendors supported, mapping config reference, deployment steps per vendor)
 - [ ] 6.2 Re-run the full v1 verification checklist on the GitHub path to confirm no regression after generalization
 - [ ] 6.3 Resolve open questions in `design.md` (multi-tenancy stance, orchestrator-side WIP guard) and record decisions

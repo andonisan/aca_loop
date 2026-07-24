@@ -1,66 +1,23 @@
 # AI Loop on Azure Container Apps
 
-Label-driven cloud agents for ds-connect's issue lifecycle. When an issue
-reaches one of the two **machine-gate** labels, a scale-to-zero Container
-Apps Job spins up an agent (Claude Code or opencode) that clones the repo
-and runs the repo's own command headlessly:
+Label-driven cloud agents for ds-connect's issue lifecycle. When an issue reaches one of the two **machine-gate** labels (`status:ready-for-proposal` → `/ds:propose`, `status:ready-for-implementation` → `/ds:implement`), a scale-to-zero Container Apps Job spins up an agent (Claude Code or opencode) that clones the repo and runs the repo's own command headlessly. Humans stay exactly where the process already puts them; the loop is closed by moving labels.
 
-| Gate label | Command the agent runs |
-|---|---|
-| `status:ready-for-proposal` | `/ds:propose` — OpenSpec change on a branch as a draft PR |
-| `status:ready-for-implementation` | `/ds:implement` — implement on the same PR |
+**Orient here:**
 
-Humans stay exactly where the process already puts them (grill, spec
-review, code review, `/ds:sync`); the loop is closed by moving labels —
-requesting changes and re-applying a gate label re-dispatches the agent,
-which then sees the reviewer's PR comments.
+- [`docs/context.md`](./docs/context.md) — why this exists, the actors, the domain terms.
+- [`ARCHITECTURE.md`](./ARCHITECTURE.md) — the components, the pipeline, the load-bearing invariants, where the code lives.
+- [`DESIGN.md`](./DESIGN.md) — design rationale, risks/trade-offs, open questions; decisions in [`docs/adr/`](./docs/adr/).
+- [`ONBOARDING.md`](./ONBOARDING.md) — zero to first contribution, including end-to-end verification.
+- [`AGENTS.md`](./AGENTS.md) — entry point for AI agents working in this repo.
 
-```
-GitHub (issues: labeled, gate labels only)
-        │ webhook (HMAC-signed)
-        ▼
-Container App "webhook-receiver"  (always-on, min_replicas=1)
-  - verifies signature, filters action=="labeled" + gate label match
-  - drops events from the automation's own bot (no self-triggering)
-  - enqueues {repo, issue_number, gate_label, agent_runtime}
-        │
-        ▼
-Storage Queue "ai-jobs" ──(KEDA azure-queue rule)──▶ Container Apps Job "agent"
-                                                       (Event trigger, 0..N)
-                                                       each execution:
-                                                       1. dequeues exactly one message
-                                                          (empty? exit 0 -- KEDA overscale
-                                                          is expected)
-                                                       2. re-validates the gate label on the
-                                                          live issue (moved? exit 0 -- the
-                                                          single-label invariant is the lock)
-                                                       3. mints a per-repo installation token
-                                                          (GitHub App, never a static token)
-                                                       4. clones the repo, runs /ds:propose
-                                                          or /ds:implement via claude/opencode
-                                                       5. on failure: issue -> status:blocked
-                                                          + comment with the log tail
-                                                       6. deletes the message
-```
-
-This stack is standalone and mirrors the patterns of the ds3d
-`github-runner` stack (managed identity end to end, no connection strings,
-secrets only in Key Vault, JIT-minted GitHub credentials per execution).
-It deliberately shares nothing with it: independent blast radius, deploys,
-and lifecycle. See `openspec/changes/ai-loop-aca-job/` for the proposal,
-design decisions, and specs.
-
-## Layout
-
-- [`terraform/`](./terraform/) — the full Azure stack (resource group, storage + queue, Key Vault, ACA environment, receiver app, agent job, identities).
-- [`webhook-receiver/`](./webhook-receiver/) — the `issues`-event receiver.
-- [`agent/`](./agent/) — the agent image: entrypoint + Claude Code + opencode + `gh`.
+The rest of this file is the deployment quick-start.
 
 ## Manual prerequisites (cannot be Terraformed)
 
 1. Org Settings → Developer settings → **GitHub Apps** → New GitHub App.
    This is a **dedicated App** — do not reuse a CI runner App; keeping the
-   permission sets separate keeps the blast radius separate.
+   permission sets separate keeps the blast radius separate
+   ([ADR-0003](./docs/adr/0003-dedicated-github-app-separate-from-ci-runner-app.md)).
 2. **Repository permissions**: Issues **Read & write**, Contents **Read &
    write**, Pull requests **Read & write**.
 3. **Subscribe to events → Issues.**
@@ -116,45 +73,4 @@ docker build -t <registry>/ai-loop-agent:latest ./agent
 docker push <registry>/ai-loop-agent:latest
 ```
 
-## Rollout / verification
-
-1. Apply into a scratch resource group first.
-2. Complete the manual GitHub App steps above, including the secrets.
-3. Test the receiver alone: use GitHub's webhook "Redeliver" on a past
-   `issues` labeled delivery with a gate label, then check
-   `az storage message peek --account-name <name> --queue-name ai-jobs
-   --auth-mode login`.
-4. Live run: label a scratch issue `status:ready-for-proposal`, watch
-   `az containerapp job execution list --name <agent_job_name> -g <rg>`,
-   and confirm a draft PR opens and the label advances.
-5. Test the edge cases deliberately:
-   - re-label the issue away **before** the execution starts → it must
-     exit 0 with no LLM calls in the logs (stale gate);
-   - kill an execution mid-run → the issue must end at `status:blocked`
-     with an explanatory comment;
-   - redeliver the same webhook twice → the second execution must exit 0
-     at gate re-validation;
-   - fill the WIP limit (four `status:in-progress` issues) and dispatch a
-     fifth `/ds:implement` → the gate label must be kept, with a comment.
-6. Review loop: request changes on the draft PR, re-label to
-   `status:ready-for-proposal`, and confirm the agent revises using the
-   review comments.
-
-## Known trade-offs
-
-- **Always-on receiver.** `min_replicas=1` plus Storage/Key Vault/Log
-  Analytics is a small fixed cost; everything else bills per execution.
-- **Agent runs are long.** `replica_timeout_seconds` (default 3600) is a
-  hard ceiling per run; the entrypoint's watchdog fires 120s earlier so
-  the failure contract runs before the platform kills the replica. LLM
-  spend per run is bounded by `agent_max_turns`.
-- **No automatic retry of agent work.** A failed run is not
-  idempotent-retryable like a CI job — the issue goes to `status:blocked`
-  and a human re-labels to retry. Only entrypoint-level crashes retry via
-  the queue's visibility timeout, capped by the poison-message guard.
-- **Prompt injection is a real surface.** Issue bodies drive an agent
-  holding a repo-scoped write token. Controls: label-triage as the
-  authorization gate, per-repo short-lived tokens, branch protection,
-  turn caps, and an allowed-tools policy (`AGENT_ALLOWED_TOOLS`).
-- **Copilot CLI is out of scope.** Its auth is tied to a user
-  subscription; use GitHub's hosted Copilot coding agent natively instead.
+Then verify the deployment end to end — receiver, live run, and the deliberate edge cases — following [`ONBOARDING.md`](./ONBOARDING.md#3-verify-it-end-to-end).
