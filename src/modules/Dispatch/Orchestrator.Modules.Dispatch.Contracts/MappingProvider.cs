@@ -13,16 +13,23 @@ public sealed class MappingProvider(MappingConfig config) : IMappingProvider
         string? project,
         string repo,
         string nativeState,
-        out StateMapping? mapping
+        out ResolvedTargetState? resolved
     )
     {
+        resolved = null;
+
         var target = config.Targets.FirstOrDefault(t => t.Matches(vendor, project, repo));
         if (target is null)
         {
-            mapping = null;
             return false;
         }
 
-        return target.States.TryGetValue(nativeState, out mapping);
+        if (!target.States.TryGetValue(nativeState, out var state))
+        {
+            return false;
+        }
+
+        resolved = new ResolvedTargetState(target, state);
+        return true;
     }
 }

@@ -55,9 +55,33 @@ public static class MappingLoader
             }
             else
             {
-                if (string.IsNullOrWhiteSpace(raw.Repo))
+                // Repo alone was required before code-host coordinates existed. It is now "at least
+                // one of repo/project", because a non-repo-anchored tracker (a Jira project) has no
+                // repo of its own -- see TargetMapping.Matches.
+                if (string.IsNullOrWhiteSpace(raw.Repo) && string.IsNullOrWhiteSpace(raw.Project))
                 {
-                    errors.Add($"{prefix}.repo is required");
+                    errors.Add($"{prefix} must declare at least one of repo/project");
+                }
+
+                var codeHost = vendor;
+                if (!string.IsNullOrWhiteSpace(raw.CodeHost))
+                {
+                    if (!Enum.TryParse(raw.CodeHost, ignoreCase: true, out codeHost))
+                    {
+                        errors.Add($"{prefix}.codeHost '{raw.CodeHost}' is not a known vendor");
+                    }
+                }
+
+                // Defaults to repo, so a target whose tracker is also its git host declares neither
+                // field and behaves exactly as before (design.md D8). Empty after defaulting means
+                // there is no repository to clone, which is a configuration error rather than a
+                // runtime surprise.
+                var codeRepo = string.IsNullOrWhiteSpace(raw.CodeRepo) ? raw.Repo : raw.CodeRepo;
+                if (string.IsNullOrWhiteSpace(codeRepo))
+                {
+                    errors.Add(
+                        $"{prefix}.codeRepo is required when repo is not set (nothing to clone)"
+                    );
                 }
 
                 if (raw.States.Count == 0)
@@ -105,9 +129,18 @@ public static class MappingLoader
                     }
                 }
 
-                if (!string.IsNullOrWhiteSpace(raw.Repo))
+                if (!string.IsNullOrWhiteSpace(codeRepo))
                 {
-                    targets.Add(new TargetMapping(vendor, raw.Project, raw.Repo, states));
+                    targets.Add(
+                        new TargetMapping(
+                            vendor,
+                            raw.Project,
+                            raw.Repo ?? string.Empty,
+                            states,
+                            codeHost,
+                            codeRepo
+                        )
+                    );
                 }
             }
         }

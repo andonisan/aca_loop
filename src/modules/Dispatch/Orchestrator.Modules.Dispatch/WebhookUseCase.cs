@@ -77,7 +77,7 @@ public sealed class WebhookUseCase : IUseCase
                 canonicalEvent.Project,
                 canonicalEvent.Repo,
                 canonicalEvent.NativeState,
-                out var stateMapping
+                out var resolved
             )
         )
         {
@@ -92,15 +92,14 @@ public sealed class WebhookUseCase : IUseCase
             canonicalEvent.Repo,
             canonicalEvent.ItemId,
             canonicalEvent.NativeState,
-            stateMapping!.Action,
-            stateMapping.Runtime.ToString(),
-            stateMapping.OnFailureState,
-            // Defaulted to the tracker here: the mapping does not yet declare per-target codeHost/
-            // codeRepo (jira-adapter tasks 2.1-2.3). Every current target is its own code host, so
-            // these defaults are exactly today's behavior, and group 2 replaces them with the
-            // resolved mapping values rather than changing what a single-vendor target does.
-            CodeHost: canonicalEvent.Vendor,
-            CodeRepo: canonicalEvent.Repo
+            resolved!.State.Action,
+            resolved.State.Runtime.ToString(),
+            resolved.State.OnFailureState,
+            // From the resolved target, not the event: the code host is configuration, and the loader
+            // has already defaulted it to the tracker for a target that declared neither field -- so a
+            // single-vendor mapping still produces exactly the coordinates it always did.
+            CodeHost: resolved.Target.CodeHost,
+            CodeRepo: resolved.Target.CodeRepo
         );
 
         await queue.EnqueueAsync(message, cancellationToken);
