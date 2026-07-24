@@ -5,12 +5,20 @@
 > con el proceso de referencia documentado en el `CONTRIBUTING.md` de
 > ds-connect (punto 4).
 >
-> **Estado (2026-07-24): implementado.** El motor de mapeo configurable, los
-> tres adaptadores de vendor (GitHub, GitLab, Azure DevOps) y el despachador
-> sobre .NET Aspire + Azure Container Apps ya existen en `src/` — ver
-> `openspec/changes/agentic-backlog-orchestrator/` y el `README.md` del
-> repo. Lo que falta: pilotar GitLab y Azure DevOps contra un proyecto real
-> (nunca verificado en vivo) y el control-plane centralizado
+> **Estado (2026-07-25): implementado.** El motor de mapeo configurable, los
+> cuatro adaptadores de vendor (GitHub, GitLab, Azure DevOps, Jira) y el
+> despachador sobre .NET Aspire + Azure Container Apps ya existen en `src/` —
+> ver `openspec/changes/agentic-backlog-orchestrator/`,
+> `openspec/changes/jira-adapter/` y el `README.md` del repo.
+>
+> Jira es el primer vendor **solo-tracker**: no aloja git, así que el seam de
+> adaptadores se separó en tracker (`IBacklogAdapter`) y code host
+> (`ICodeHostAdapter`), y cada target de Jira declara en el mapping dónde vive
+> su repositorio (`codeHost`/`codeRepo`). Los mappings de un solo vendor no
+> cambian: ambos campos toman por defecto el propio tracker.
+>
+> Lo que falta: pilotar GitLab, Azure DevOps y Jira contra un proyecto real
+> (ninguno verificado en vivo) y el control-plane centralizado
 > (`openspec/changes/orchestrator-portal/`).
 
 ## 1. Resumen ejecutivo
@@ -143,16 +151,20 @@ descrito arriba: ver [`README.md`](../../README.md) y
 
 | Pieza | v1 (solo GitHub / ds-connect) | Estado actual |
 |---|---|---|
-| Detección de estado | Webhook de GitHub `issues`, dos labels hardcodeadas | Adaptador por vendor (`src/modules/{GitHub,GitLab,AzureDevOps}/`) + motor de mapeo YAML validado en arranque |
+| Detección de estado | Webhook de GitHub `issues`, dos labels hardcodeadas | Adaptador por vendor (`src/modules/{GitHub,GitLab,AzureDevOps,Jira}/`) + motor de mapeo YAML validado en arranque |
 | Despacho | Azure Container Apps Job + KEDA sobre Storage Queue | Mismo patrón, generalizado a multi-vendor sobre .NET Aspire (`src/root/Orchestrator.{Receiver,Agent}`) |
 | Imagen de agente | Node: git, `gh`, Claude Code y opencode en la misma imagen | .NET + los mismos binarios; runtime seleccionado **por estado** vía el mapping, no fijo por despliegue |
 | Comandos | `/ds:propose`/`/ds:implement`, fijos | Instrucción por estado, configurable por cliente/repo en `mapping.yaml` |
-| Vendors soportados | Solo GitHub | GitHub (probado en producción), GitLab y Azure DevOps (implementados, con tests, **sin pilotar en vivo**) |
+| Vendors soportados | Solo GitHub | GitHub (probado en producción), GitLab, Azure DevOps y Jira (implementados, con tests, **sin pilotar en vivo**) |
+| Tracker vs code host | Un solo vendor hace ambas cosas | Separados: un target declara su tracker y, si difiere, su `codeHost`/`codeRepo`. Jira es solo-tracker |
 
-Lo que queda pendiente, honesto: GitLab y Azure DevOps no se han probado
-contra un proyecto real (hace falta una cuenta/credenciales reales que no
-había disponibles al implementarlos); Azure DevOps usa PAT en vez de service
-principal de Entra por la misma razón (ver design.md). El control-plane
+Lo que queda pendiente, honesto: GitLab, Azure DevOps y Jira no se han
+probado contra un proyecto real (hace falta una cuenta/credenciales reales
+que no había disponibles al implementarlos); Azure DevOps usa PAT en vez de
+service principal de Entra por la misma razón (ver design.md). En Jira, la
+divergencia entre Cloud y Data Center (versión de REST, formato de comentario
+y autenticación cambian juntos) solo se ejecuta en la ruta de fallo, así que
+un piloto que solo pruebe el camino feliz no la verifica. El control-plane
 centralizado para operar múltiples stacks de cliente a la vez es un
 producto aparte, ya propuesto: `openspec/changes/orchestrator-portal/`.
 

@@ -82,6 +82,43 @@ variable "gitlab_bot_username" {
   default     = ""
 }
 
+# --- Jira (optional) ---
+
+variable "enable_jira" {
+  description = "Provision the Jira vendor's Key Vault secrets (webhook HMAC secret) and wire its env vars onto the receiver/agent. The API/personal access token itself is never a Terraform variable -- pushed to Key Vault out-of-band, like the GitHub App private key."
+  type        = bool
+  default     = false
+}
+
+variable "jira_base_url" {
+  description = "Jira instance base URL, e.g. \"https://acme.atlassian.net\" (Cloud) or a self-hosted Data Center host. Required when enable_jira is true."
+  type        = string
+  default     = ""
+}
+
+variable "jira_deployment" {
+  description = "Which Jira product this instance is: \"Cloud\" or \"DataCenter\". Selects REST API version, comment body format, and auth scheme together -- Atlassian Document Format and /rest/api/3 are Cloud-only, so a wrong value here fails on the comment path, which is the failure path."
+  type        = string
+  default     = "Cloud"
+
+  validation {
+    condition     = contains(["Cloud", "DataCenter"], var.jira_deployment)
+    error_message = "jira_deployment must be either \"Cloud\" or \"DataCenter\"."
+  }
+}
+
+variable "jira_account_email" {
+  description = "Account email used as the Basic-auth username alongside the API token on Jira Cloud. Ignored on Data Center, where the token is a bearer personal access token. Required when enable_jira is true and jira_deployment is \"Cloud\"."
+  type        = string
+  default     = ""
+}
+
+variable "jira_bot_account_id" {
+  description = "Jira accountId of this automation's own account (or the username on Data Center, which has no account ids). Status changes made by this account are dropped so the loop can't trigger itself. Required when enable_jira is true."
+  type        = string
+  default     = ""
+}
+
 # --- Azure DevOps (optional) ---
 
 variable "enable_azure_devops" {

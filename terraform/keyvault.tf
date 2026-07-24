@@ -27,6 +27,16 @@ resource "random_password" "gitlab_webhook_secret" {
   special = false
 }
 
+# Jira signs webhook bodies with HMAC (default SHA-256) in an X-Hub-Signature header, on both Cloud
+# and Data Center -- so the same "generate it here, paste it into the webhook config" flow as GitHub
+# and GitLab applies. Atlassian treats the secret as optional at registration; the adapter does not,
+# and rejects unsigned requests, so this must actually be set on the webhook.
+resource "random_password" "jira_webhook_secret" {
+  count   = var.enable_jira ? 1 : 0
+  length  = 48
+  special = false
+}
+
 # Azure DevOps Service Hooks authenticate via HTTP Basic auth rather than a signed/shared secret
 # header -- Terraform generates the password half and surfaces it via an output, paired with
 # var.azure_devops_webhook_username, to paste into the subscription's Basic authentication fields.
@@ -46,6 +56,7 @@ resource "random_password" "azure_devops_webhook_password" {
 #   az keyvault secret set --name Vendors--GitHub--PrivateKeyPem --file key.pem ...
 #   az keyvault secret set --name Vendors--GitLab--AccessToken --value <token>   (if enable_gitlab)
 #   az keyvault secret set --name Vendors--AzureDevOps--PersonalAccessToken --value <pat>   (if enable_azure_devops)
+#   az keyvault secret set --name Vendors--Jira--ApiToken --value <token>   (if enable_jira)
 resource "azurerm_key_vault_secret" "github_webhook_secret" {
   name         = "Vendors--GitHub--WebhookSecret"
   value        = random_password.github_webhook_secret.result
@@ -66,6 +77,15 @@ resource "azurerm_key_vault_secret" "gitlab_webhook_secret" {
   count        = var.enable_gitlab ? 1 : 0
   name         = "Vendors--GitLab--WebhookSecret"
   value        = random_password.gitlab_webhook_secret[0].result
+  key_vault_id = azurerm_key_vault.this.id
+
+  depends_on = [time_sleep.kv_rbac_propagation]
+}
+
+resource "azurerm_key_vault_secret" "jira_webhook_secret" {
+  count        = var.enable_jira ? 1 : 0
+  name         = "Vendors--Jira--WebhookSecret"
+  value        = random_password.jira_webhook_secret[0].result
   key_vault_id = azurerm_key_vault.this.id
 
   depends_on = [time_sleep.kv_rbac_propagation]

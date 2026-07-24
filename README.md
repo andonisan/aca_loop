@@ -2,7 +2,7 @@
 
 Multi-vendor, mapping-driven cloud agents for issue/work-item lifecycles.
 When a tracked item (a GitHub issue, a GitLab issue, an Azure DevOps work
-item) reaches a state declared in a deployment's mapping file, a
+item, a Jira issue) reaches a state declared in a deployment's mapping file, a
 scale-to-zero Container Apps Job — an **AI pod** — spins up an agent
 (Claude Code or opencode) that clones the target repo and runs that state's
 mapped command headlessly:
@@ -34,17 +34,52 @@ which then sees the reviewer's comments.
 
 ## Vendors
 
-| Vendor | Status | Adapter |
-|---|---|---|
-| GitHub | Always on, the only vendor v1 shipped | `src/modules/GitHub/` |
-| GitLab | Optional (`enable_gitlab`) | `src/modules/GitLab/` |
-| Azure DevOps | Optional (`enable_azure_devops`), PAT auth | `src/modules/AzureDevOps/` |
+A vendor can be a **tracker** (it holds the work item and its state), a
+**code host** (it holds the git repo the agent clones), or both. The three
+original vendors are both. Jira is a tracker only.
 
-GitLab and Azure DevOps compile, are unit-tested, and are wired into
-Terraform — but neither has been run against a live GitLab/Azure DevOps
-project yet (that needs a real org/PAT this repo's dev environment doesn't
-have). Treat them as implemented-but-unpiloted until someone runs the
-rollout checklist below against a real project of each.
+| Vendor | Role | Status | Adapter |
+|---|---|---|---|
+| GitHub | Tracker + code host | Always on, the only vendor v1 shipped | `src/modules/GitHub/` |
+| GitLab | Tracker + code host | Optional (`enable_gitlab`) | `src/modules/GitLab/` |
+| Azure DevOps | Tracker + code host | Optional (`enable_azure_devops`), PAT auth | `src/modules/AzureDevOps/` |
+| Jira | **Tracker only** | Optional (`enable_jira`) | `src/modules/Jira/` |
+
+Because Jira hosts no git, every Jira target must also declare where its
+code lives. `codeHost` defaults to the target's own `vendor` and `codeRepo`
+to its `repo`, so single-vendor mappings need no change; a Jira target has
+to set both:
+
+```yaml
+  - vendor: Jira                    # tracker: matched on project key
+    project: "DSC"
+    codeHost: GitHub                # where the git repo lives
+    codeRepo: "your-org/ds-connect"
+    states:
+      "Ready for Proposal":
+        action: /ds:propose
+        runtime: Claude
+        onFailureState: "Blocked"
+```
+
+Jira also differs in what carries the state: the workflow **status**, not a
+label. That gives a native single-state invariant, but status cannot be
+written directly — it moves only through a transition that is valid from the
+item's *current* status, so a configured `onFailureState` can legitimately be
+unreachable. When that happens the failure comment is still posted and the
+run is still recorded; only the state is left as it was.
+
+GitLab, Azure DevOps, and Jira compile, are unit-tested, and are wired into
+Terraform — but none has been run against a live instance yet (that needs a
+real org/PAT/token this repo's dev environment doesn't have). Treat them as
+implemented-but-unpiloted until someone runs the rollout checklist below
+against a real project of each.
+
+For Jira specifically, note that the pilot has to exercise the **failure**
+path, not just the happy one: Cloud and Data Center diverge on REST version,
+comment format, and auth together (`/rest/api/3` + Atlassian Document Format
+are Cloud-only), and the comment call is the first place that divergence
+executes.
 
 ## Architecture
 
@@ -100,9 +135,10 @@ D7 for the full rationale):
 - [`src/root/Orchestrator.Receiver/`](./src/root/Orchestrator.Receiver/) — the always-on webhook host; also where `mapping.yaml` lives.
 - [`src/root/Orchestrator.Agent/`](./src/root/Orchestrator.Agent/) — the Container Apps Job entrypoint (one execution = one dequeue attempt).
 - [`src/root/Orchestrator.Aspire/`](./src/root/Orchestrator.Aspire/) — local dev orchestration (Receiver + Agent + Azurite for the queue). `enable_azure_devops`/GitLab need no emulator; only the queue does.
-- [`src/modules/Backlog/`](./src/modules/Backlog/) — the canonical contracts (`CanonicalEvent`, `CanonicalMessage`, `IVendorAdapter`) shared by every vendor module.
-- [`src/modules/GitHub/`](./src/modules/GitHub/), [`GitLab/`](./src/modules/GitLab/), [`AzureDevOps/`](./src/modules/AzureDevOps/) — one vendor adapter each.
-- [`src/modules/Dispatch/`](./src/modules/Dispatch/) — the mapping engine + webhook endpoint (composed by Receiver only).
+- [`src/modules/Backlog/`](./src/modules/Backlog/) — the canonical contracts (`CanonicalEvent`, `CanonicalMessage`, `IBacklogAdapter`, `ICodeHostAdapter`) shared by every vendor module.
+- [`src/modules/GitHub/`](./src/modules/GitHub/), [`GitLab/`](./src/modules/GitLab/), [`AzureDevOps/`](./src/modules/AzureDevOps/) — one vendor adapter each, tracker **and** code host.
+- [`src/modules/Jira/`](./src/modules/Jira/) — tracker only; implements `IBacklogAdapter` and deliberately not `ICodeHostAdapter`.
+- [`src/modules/Dispatch/`](./src/modules/Dispatch/) — the webhook endpoint and queue writer (composed by Receiver only), over [`Dispatch.Contracts/`](./src/modules/Dispatch/Orchestrator.Modules.Dispatch.Contracts/) — the mapping model, loader/validator, and resolver, extracted so the Portal reuses the same validator rather than a copy of it.
 - [`src/modules/Execution/`](./src/modules/Execution/) — gate re-validation, runtime execution, failure write-back (composed by Agent only).
 - [`src/tests/`](./src/tests/) — `Orchestrator.ArchTests` (module-boundary rules) + one `.UnitTests` project per module.
 - [`terraform/`](./terraform/) — the full Azure stack (resource group, storage + queue, Key Vault, ACA environment, receiver app, agent job, identities, per-vendor secrets).
@@ -156,6 +192,52 @@ D7 for the full rationale):
    webhook: URL `https://<fqdn>/webhooks/gitlab`, Secret token = that
    output, trigger on **Issues events**.
 
+### Jira (optional, `enable_jira = true`)
+
+1. Create a dedicated Jira account for the automation (its account is what
+   the self-trigger filter keys on) and note its **accountId** — visible in
+   the URL of its profile page, or via
+   `/rest/api/3/myself`. On Data Center there are no account ids; use the
+   username instead. Set `jira_bot_account_id` to it.
+2. Create the token for that account. **Cloud**: an API token
+   (id.atlassian.com → Security → API tokens), and set `jira_account_email`
+   to the account's email — Cloud auth is Basic with email + token.
+   **Data Center**: a personal access token, which is sent as a bearer token
+   and needs no email.
+3. Push it to Key Vault: `az keyvault secret set --vault-name <vault> --name Vendors--Jira--ApiToken --value <token>`.
+4. Grant that account, on the target project: Browse Projects, Add Comments,
+   and **Transition Issues**. Transition permission is the one that matters —
+   it is what lets the agent move an item to its failure state.
+5. Register the webhook as an **admin webhook** — Jira Settings → System →
+   WebHooks, or `POST /rest/webhooks/1.0/webhook`. Do **not** use
+   `/rest/api/3/webhook`: that path is restricted to Connect/OAuth 2.0 apps
+   and its webhooks **expire 30 days** from creation or last refresh, which
+   would need a refresh job to keep a per-client stack alive unattended.
+   Admin webhooks have no stated expiry.
+6. Configure it: URL `https://<fqdn>/webhooks/jira`, event **Issue updated**
+   (`jira:issue_updated`), scoped with a JQL filter to the target project
+   (e.g. `project = DSC`), and **Secret** =
+   `terraform output -raw jira_webhook_secret`.
+7. The secret is not optional here even though Atlassian's UI treats it as
+   such: the adapter rejects any request without a valid `X-Hub-Signature`,
+   so leaving it blank breaks dispatch outright rather than merely weakening
+   it.
+8. Set `jira_deployment` to `Cloud` or `DataCenter`. This one value selects
+   the REST version, the comment body format, and the auth scheme together —
+   getting it wrong surfaces on the comment call, which is on the failure
+   path, so verify it by forcing a failed run rather than a successful one.
+9. In the mapping, give every Jira target a `codeHost` + `codeRepo`, and
+   complete that code host's own prerequisites above (its token and clone
+   credentials are what the agent actually pushes with). A Jira target's
+   `codeHost` must be a vendor whose module is composed in this deployment —
+   the receiver refuses to start otherwise.
+10. On the target Jira project: restrict who holds **Transition Issues** for
+    the gate statuses — **the ability to change the tracked state is the
+    authorization gate for spending agent time**, and on Jira that gate is
+    workflow permissions and conditions rather than a label permission.
+    Jira's model is generally the more restrictive of the four, which is
+    favourable, but it is per-project and must be checked per client.
+
 ### Azure DevOps (optional, `enable_azure_devops = true`)
 
 1. Create a Personal Access Token scoped to Work Items (Read & write) and
@@ -175,7 +257,7 @@ cd terraform
 cp terraform.tfvars.example terraform.tfvars
 # fill in: subscription_id, github_app_id, github_app_installation_id,
 # github_bot_login, container_registry_*, *_image
-# (optionally: enable_gitlab / enable_azure_devops + their variables)
+# (optionally: enable_gitlab / enable_azure_devops / enable_jira + their variables)
 
 terraform init
 terraform plan

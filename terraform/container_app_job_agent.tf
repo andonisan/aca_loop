@@ -104,6 +104,35 @@ resource "azurerm_container_app_job" "agent" {
       }
 
       dynamic "env" {
+        for_each = var.enable_jira ? [1] : []
+        content {
+          name  = "Vendors__Jira__BaseUrl"
+          value = var.jira_base_url
+        }
+      }
+      dynamic "env" {
+        for_each = var.enable_jira ? [1] : []
+        content {
+          name  = "Vendors__Jira__Deployment"
+          value = var.jira_deployment
+        }
+      }
+      dynamic "env" {
+        for_each = var.enable_jira ? [1] : []
+        content {
+          name  = "Vendors__Jira__AccountEmail"
+          value = var.jira_account_email
+        }
+      }
+      dynamic "env" {
+        for_each = var.enable_jira ? [1] : []
+        content {
+          name  = "Vendors__Jira__BotAccountId"
+          value = var.jira_bot_account_id
+        }
+      }
+
+      dynamic "env" {
         for_each = var.enable_azure_devops ? [1] : []
         content {
           name  = "Vendors__AzureDevOps__Organization"

@@ -31,6 +31,12 @@ output "gitlab_webhook_secret" {
   sensitive   = true
 }
 
+output "jira_webhook_secret" {
+  description = "Paste this into the Jira webhook's secret field so Atlassian signs bodies with it. The adapter rejects unsigned requests, so leaving the webhook's secret blank breaks dispatch rather than merely weakening it. Empty when enable_jira = false."
+  value       = var.enable_jira ? random_password.jira_webhook_secret[0].result : null
+  sensitive   = true
+}
+
 output "azure_devops_webhook_password" {
   description = "Paste this, paired with var.azure_devops_webhook_username, into the Azure DevOps Service Hooks subscription's Basic authentication fields. Empty when enable_azure_devops = false."
   value       = var.enable_azure_devops ? random_password.azure_devops_webhook_password[0].result : null

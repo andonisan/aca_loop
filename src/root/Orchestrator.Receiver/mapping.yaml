@@ -14,3 +14,21 @@ targets:
         action: /ds:implement
         runtime: Claude
         onFailureState: "status:blocked"
+# A split tracker/code-host target, for reference. Jira holds the work item and its status but hosts
+# no git, so codeHost/codeRepo say where the agent actually clones from. For a vendor that is both
+# tracker and git host (every target above), codeHost defaults to vendor and codeRepo to repo, so
+# neither field is written -- which is why mappings predating them keep working unchanged.
+#
+# Note the state names: they are this client's Jira status names verbatim, not a canonical set. The
+# mapping is per-target, so status vocabulary is configuration -- see DOCS/jira-status-vocabulary.md
+# for the names real Plain Concepts Jira instances actually use.
+#
+#  - vendor: Jira
+#    project: "DSC"                 # Jira project key -- Jira targets match on this, not on a repo
+#    codeHost: GitHub
+#    codeRepo: "your-org/ds-connect"
+#    states:
+#      "Ready for Proposal":
+#        action: /ds:propose
+#        runtime: Claude
+#        onFailureState: "Blocked"   # must be reachable by a transition from the gate status

@@ -29,6 +29,17 @@ agent_image                     = "myregistry.azurecr.io/ai-loop-agent:latest"
 # gitlab_base_url     = "https://gitlab.com"
 # gitlab_bot_username = "ai-loop-bot"
 
+# Optional: Jira, on top of the always-on GitHub adapter. Jira is a tracker
+# only -- it hosts no git, so every Jira target in mapping.yaml must also
+# declare a codeHost/codeRepo on one of the other vendors. The API token
+# itself is never a tfvar -- push it to Key Vault out-of-band after apply:
+#   az keyvault secret set --name Vendors--Jira--ApiToken --value <token>
+# enable_jira         = true
+# jira_base_url       = "https://acme.atlassian.net"
+# jira_deployment     = "Cloud"                          # or "DataCenter"
+# jira_account_email  = "ai-loop-bot@acme.com"           # Cloud only
+# jira_bot_account_id = "5b10a2844c20165700ede21g"       # username on DataCenter
+
 # Optional: Azure DevOps, on top of the always-on GitHub adapter. The PAT
 # itself is never a tfvar -- push it to Key Vault out-of-band after apply:
 #   az keyvault secret set --name Vendors--AzureDevOps--PersonalAccessToken --value <pat>
