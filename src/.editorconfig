@@ -1,0 +1,84 @@
+root = true
+
+# ---- All files ----
+[*]
+indent_style = space
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[*.md]
+trim_trailing_whitespace = false
+
+# ---- .NET / C# ----
+[*.cs]
+indent_size = 4
+
+# Namespaces
+csharp_style_namespace_declarations = file_scoped:error
+dotnet_diagnostic.IDE0161.severity = error
+
+# Namespace matches folder structure
+dotnet_style_namespace_match_folder = true:error
+dotnet_diagnostic.IDE0130.severity = error
+
+# Naming: interfaces are I-prefixed, PascalCase
+dotnet_naming_symbols.interfaces.applicable_kinds = interface
+dotnet_naming_symbols.interfaces.applicable_accessibilities = *
+dotnet_naming_style.i_prefix_pascal_case.capitalization = pascal_case
+dotnet_naming_style.i_prefix_pascal_case.required_prefix = I
+dotnet_naming_rule.interfaces_i_prefixed.symbols = interfaces
+dotnet_naming_rule.interfaces_i_prefixed.style = i_prefix_pascal_case
+dotnet_naming_rule.interfaces_i_prefixed.severity = error
+
+# Naming: types (classes, structs, enums, records) are PascalCase
+dotnet_naming_symbols.types.applicable_kinds = class, struct, enum, record
+dotnet_naming_symbols.types.applicable_accessibilities = *
+dotnet_naming_style.pascal_case.capitalization = pascal_case
+dotnet_naming_rule.types_pascal_case.symbols = types
+dotnet_naming_rule.types_pascal_case.style = pascal_case
+dotnet_naming_rule.types_pascal_case.severity = error
+
+# Primary constructors preferred where applicable
+csharp_style_prefer_primary_constructors = true:warning
+
+# Collection expressions preferred
+csharp_style_prefer_collection_expression = true:warning
+dotnet_diagnostic.IDE0300.severity = warning
+dotnet_diagnostic.IDE0301.severity = warning
+dotnet_diagnostic.IDE0302.severity = warning
+dotnet_diagnostic.IDE0303.severity = warning
+dotnet_diagnostic.IDE0304.severity = warning
+dotnet_diagnostic.IDE0305.severity = warning
+
+# System directives sorted first, separate group
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+dotnet_diagnostic.IDE0055.severity = warning
+
+# Accessibility modifiers: omit only when they equal the language default
+dotnet_style_require_accessibility_modifiers = omit_if_default:warning
+dotnet_diagnostic.IDE0040.severity = warning
+
+# Prefer source-generated logging (LoggerMessage) over direct ILogger calls
+dotnet_diagnostic.CA1848.severity = warning
+
+# Style violations are warnings; correctness/architecture invariants are errors.
+# Any suppression of the rules above must carry an explicit inline rationale,
+# e.g. `#pragma warning disable IDE0130 // <reason>`.
+# MOD003/MOD005 (EF entity leakage) are not ported — this product has no persistence layer.
+dotnet_diagnostic.MOD001.severity = error
+dotnet_diagnostic.MOD002.severity = error
+dotnet_diagnostic.MOD004.severity = error
+dotnet_diagnostic.CQS001.severity = error
+
+[*.{csproj,props,targets}]
+indent_size = 2
+
+# ---- JS (commitlint config only) ----
+[*.{js,json}]
+indent_size = 2
+
+[*.{yml,yaml}]
+indent_size = 2

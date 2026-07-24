@@ -1,0 +1,74 @@
+
+==============================================================================
+LIGHT THEME
+==============================================================================
+  ratio   need      pair                               context
+------------------------------------------------------------------------------
+  16.58    4.5  PASS --fg on --bg                       body text on page
+  17.31    4.5  PASS --fg on --surface                  body text on card
+  16.58    4.5  PASS --fg on --surface-2                text on card head
+  15.88    4.5  PASS --fg on --surface-3                text on subtle fill
+  10.86    4.5  PASS --fg-2 on --surface                secondary text on card
+  10.40    4.5  PASS --fg-2 on --bg                     secondary text on page
+  10.40    4.5  PASS --fg-2 on --surface-2              nav/btn label
+   9.96    4.5  PASS --fg-2 on --surface-3              tag / count-pill / neutral badge
+   5.50    4.5  PASS --fg-muted on --surface            muted text on card
+   5.27    4.5  PASS --fg-muted on --bg                 muted text on page
+   5.27    4.5  PASS --fg-muted on --surface-2          table header (th, 11px)
+   5.05    4.5  PASS --fg-muted on --surface-3          muted on subtle fill
+   3.23  --  n/a  --fg-subtle on --surface           DECORATIVE separators on card
+   3.10  --  n/a  --fg-subtle on --bg                DECORATIVE separators on page
+   3.10  --  n/a  --fg-subtle on --surface-2         DECORATIVE chip/crumb separators
+   7.54    4.5  PASS --brand on --surface               link on card
+   7.22    4.5  PASS --brand on --bg                    link on page
+   6.71    4.5  PASS --brand on --brand-soft            active nav item / filter chip
+   7.54    4.5  PASS --brand-on on --brand              primary button label
+   4.53    4.5  PASS --ok on --ok-soft                  badge: succeeded
+   7.34    4.5  PASS --warn-text on --warn-soft         badge: stale gate
+   5.16    4.5  PASS --danger on --danger-soft          badge: failed
+   4.59    4.5  PASS --info on --info-soft              badge: running
+   5.52    4.5  PASS --violet on --violet-soft          badge: poison
+   6.26    4.5  PASS --orange-text on --orange-soft     badge: unknown skew
+   6.12    4.5  PASS --yellow-text on --yellow-soft     badge: yellow
+  17.31    3.0  PASS --fg on --surface                  stat value (26px)
+  16.58    3.0  PASS --fg on --bg                       page title h1 (20px/600)
+
+==============================================================================
+DARK THEME
+==============================================================================
+  ratio   need      pair                               context
+------------------------------------------------------------------------------
+  16.37    4.5  PASS --fg on --bg                       body text on page
+  15.30    4.5  PASS --fg on --surface                  body text on card
+  14.42    4.5  PASS --fg on --surface-2                text on card head
+  13.39    4.5  PASS --fg on --surface-3                text on subtle fill
+   9.40    4.5  PASS --fg-2 on --surface                secondary text on card
+  10.05    4.5  PASS --fg-2 on --bg                     secondary text on page
+   8.85    4.5  PASS --fg-2 on --surface-2              nav/btn label
+   8.22    4.5  PASS --fg-2 on --surface-3              tag / count-pill / neutral badge
+   5.17    4.5  PASS --fg-muted on --surface            muted text on card
+   5.53    4.5  PASS --fg-muted on --bg                 muted text on page
+   4.87    4.5  PASS --fg-muted on --surface-2          table header (th, 11px)
+   4.52    4.5  PASS --fg-muted on --surface-3          muted on subtle fill
+   2.76  --  n/a  --fg-subtle on --surface           DECORATIVE separators on card
+   2.95  --  n/a  --fg-subtle on --bg                DECORATIVE separators on page
+   2.60  --  n/a  --fg-subtle on --surface-2         DECORATIVE chip/crumb separators
+   4.73    4.5  PASS --brand on --surface               link on card
+   5.06    4.5  PASS --brand on --bg                    link on page
+   4.56    4.5  PASS --brand on --brand-soft            active nav item / filter chip
+   5.06    4.5  PASS --brand-on on --brand              primary button label
+   6.05    4.5  PASS --ok on --ok-soft                  badge: succeeded
+  10.66    4.5  PASS --warn-text on --warn-soft         badge: stale gate
+   5.41    4.5  PASS --danger on --danger-soft          badge: failed
+   5.92    4.5  PASS --info on --info-soft              badge: running
+   5.50    4.5  PASS --violet on --violet-soft          badge: poison
+  10.03    4.5  PASS --orange-text on --orange-soft     badge: unknown skew
+  11.87    4.5  PASS --yellow-text on --yellow-soft     badge: yellow
+  15.30    3.0  PASS --fg on --surface                  stat value (26px)
+  16.37    3.0  PASS --fg on --bg                       page title h1 (20px/600)
+
+==============================================================================
+SUMMARY
+==============================================================================
+light: all pairs meet WCAG AA for their rendered size.
+dark: all pairs meet WCAG AA for their rendered size.

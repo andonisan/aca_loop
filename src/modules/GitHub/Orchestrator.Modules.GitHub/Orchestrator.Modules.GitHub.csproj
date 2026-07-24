@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Orchestrator.Modules.GitHub</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\shared\Orchestrator.BuildingBlocks\Orchestrator.BuildingBlocks.csproj" />
+    <ProjectReference Include="..\..\..\shared\Orchestrator.Constants\Orchestrator.Constants.csproj" />
+    <ProjectReference Include="..\..\Backlog\Orchestrator.Modules.Backlog.Contracts\Orchestrator.Modules.Backlog.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Orchestrator.Modules.GitHub.UnitTests" />
+  </ItemGroup>
+</Project>

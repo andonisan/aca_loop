@@ -1,0 +1,57 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="global.json" />
+  </Folder>
+  <Folder Name="/root/">
+    <Project Path="root/Orchestrator.Aspire/Orchestrator.Aspire.csproj" />
+    <Project Path="root/Orchestrator.Receiver/Orchestrator.Receiver.csproj" />
+    <Project Path="root/Orchestrator.Agent/Orchestrator.Agent.csproj" />
+    <Project Path="root/Orchestrator.Portal/Orchestrator.Portal.csproj" />
+  </Folder>
+  <Folder Name="/shared/">
+    <Project Path="shared/Orchestrator.ArchitectureAnalyzers/Orchestrator.ArchitectureAnalyzers.csproj" />
+    <Project Path="shared/Orchestrator.BuildingBlocks/Orchestrator.BuildingBlocks.csproj" />
+    <Project Path="shared/Orchestrator.Constants/Orchestrator.Constants.csproj" />
+    <Project Path="shared/Orchestrator.ServiceDefaults/Orchestrator.ServiceDefaults.csproj" />
+  </Folder>
+  <Folder Name="/modules/Backlog/">
+    <Project Path="modules/Backlog/Orchestrator.Modules.Backlog.Contracts/Orchestrator.Modules.Backlog.Contracts.csproj" />
+  </Folder>
+  <Folder Name="/modules/GitHub/">
+    <Project Path="modules/GitHub/Orchestrator.Modules.GitHub/Orchestrator.Modules.GitHub.csproj" />
+  </Folder>
+  <Folder Name="/modules/GitLab/">
+    <Project Path="modules/GitLab/Orchestrator.Modules.GitLab/Orchestrator.Modules.GitLab.csproj" />
+  </Folder>
+  <Folder Name="/modules/AzureDevOps/">
+    <Project Path="modules/AzureDevOps/Orchestrator.Modules.AzureDevOps/Orchestrator.Modules.AzureDevOps.csproj" />
+  </Folder>
+  <Folder Name="/modules/Dispatch/">
+    <Project Path="modules/Dispatch/Orchestrator.Modules.Dispatch/Orchestrator.Modules.Dispatch.csproj" />
+  </Folder>
+  <Folder Name="/modules/Execution/">
+    <Project Path="modules/Execution/Orchestrator.Modules.Execution/Orchestrator.Modules.Execution.csproj" />
+  </Folder>
+  <Folder Name="/tests/root/">
+    <Project Path="tests/root/Orchestrator.Portal.UnitTests/Orchestrator.Portal.UnitTests.csproj" />
+    <Project Path="tests/root/Orchestrator.Portal.FunctionalTests/Orchestrator.Portal.FunctionalTests.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Orchestrator.ArchTests/Orchestrator.ArchTests.csproj" />
+  </Folder>
+  <Folder Name="/tests/modules/Dispatch/">
+    <Project Path="tests/modules/Dispatch/Orchestrator.Modules.Dispatch.UnitTests/Orchestrator.Modules.Dispatch.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/tests/modules/Execution/">
+    <Project Path="tests/modules/Execution/Orchestrator.Modules.Execution.UnitTests/Orchestrator.Modules.Execution.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/tests/modules/GitLab/">
+    <Project Path="tests/modules/GitLab/Orchestrator.Modules.GitLab.UnitTests/Orchestrator.Modules.GitLab.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/tests/modules/AzureDevOps/">
+    <Project Path="tests/modules/AzureDevOps/Orchestrator.Modules.AzureDevOps.UnitTests/Orchestrator.Modules.AzureDevOps.UnitTests.csproj" />
+  </Folder>
+</Solution>

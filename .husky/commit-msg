@@ -1,0 +1,16 @@
+#!/bin/sh
+if [ "$HUSKY" = "0" ]; then
+  exit 0
+fi
+
+set -e
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+COMMIT_MSG_FILE="$1"
+case "$COMMIT_MSG_FILE" in
+  /* | [A-Za-z]:[/\\]*) ;;
+  *) COMMIT_MSG_FILE="$REPO_ROOT/$COMMIT_MSG_FILE" ;;
+esac
+
+npx --yes --package commitlint@19 --package @commitlint/config-conventional@19 -- \
+  commitlint --config "$REPO_ROOT/.config/commitlint.config.js" --edit "$COMMIT_MSG_FILE"

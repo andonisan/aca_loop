@@ -19,16 +19,35 @@ resource "random_password" "github_webhook_secret" {
   special = false
 }
 
-# Both the webhook receiver and the agent job fetch secrets from this vault
-# themselves at runtime via their managed identity -- nothing is wired
-# through Container Apps' native secret bindings, so there's no apply-order
-# dependency on the secrets pushed out-of-band and never referenced from
-# Terraform state:
-#   az keyvault secret set --name github-app-private-key --file key.pem ...
-#   az keyvault secret set --name anthropic-api-key --value ...
-#   az keyvault secret set --name opencode-provider-keys --value '<json>'  (optional)
+# Same rationale as github_webhook_secret above -- GitLab's webhook config UI
+# also wants the secret token value up front.
+resource "random_password" "gitlab_webhook_secret" {
+  count   = var.enable_gitlab ? 1 : 0
+  length  = 48
+  special = false
+}
+
+# Azure DevOps Service Hooks authenticate via HTTP Basic auth rather than a signed/shared secret
+# header -- Terraform generates the password half and surfaces it via an output, paired with
+# var.azure_devops_webhook_username, to paste into the subscription's Basic authentication fields.
+resource "random_password" "azure_devops_webhook_password" {
+  count   = var.enable_azure_devops ? 1 : 0
+  length  = 48
+  special = false
+}
+
+# Both the receiver and the agent job fetch secrets from this vault
+# themselves at runtime via their managed identity (Orchestrator.ServiceDefaults'
+# AddOptionalAzureKeyVault, keyed on the KEY_VAULT_URI env var) -- nothing is
+# wired through Container Apps' native secret bindings, so there's no
+# apply-order dependency on the secrets pushed out-of-band and never
+# referenced from Terraform state. Secret names use "--" where the .NET
+# configuration key has a ":" (Key Vault names can't contain colons):
+#   az keyvault secret set --name Vendors--GitHub--PrivateKeyPem --file key.pem ...
+#   az keyvault secret set --name Vendors--GitLab--AccessToken --value <token>   (if enable_gitlab)
+#   az keyvault secret set --name Vendors--AzureDevOps--PersonalAccessToken --value <pat>   (if enable_azure_devops)
 resource "azurerm_key_vault_secret" "github_webhook_secret" {
-  name         = "github-webhook-secret"
+  name         = "Vendors--GitHub--WebhookSecret"
   value        = random_password.github_webhook_secret.result
   key_vault_id = azurerm_key_vault.this.id
 
@@ -36,8 +55,26 @@ resource "azurerm_key_vault_secret" "github_webhook_secret" {
 }
 
 resource "azurerm_key_vault_secret" "github_app_id" {
-  name         = "github-app-id"
+  name         = "Vendors--GitHub--AppId"
   value        = var.github_app_id
+  key_vault_id = azurerm_key_vault.this.id
+
+  depends_on = [time_sleep.kv_rbac_propagation]
+}
+
+resource "azurerm_key_vault_secret" "gitlab_webhook_secret" {
+  count        = var.enable_gitlab ? 1 : 0
+  name         = "Vendors--GitLab--WebhookSecret"
+  value        = random_password.gitlab_webhook_secret[0].result
+  key_vault_id = azurerm_key_vault.this.id
+
+  depends_on = [time_sleep.kv_rbac_propagation]
+}
+
+resource "azurerm_key_vault_secret" "azure_devops_webhook_password" {
+  count        = var.enable_azure_devops ? 1 : 0
+  name         = "Vendors--AzureDevOps--WebhookPassword"
+  value        = random_password.azure_devops_webhook_password[0].result
   key_vault_id = azurerm_key_vault.this.id
 
   depends_on = [time_sleep.kv_rbac_propagation]

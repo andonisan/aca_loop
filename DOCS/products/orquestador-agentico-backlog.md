@@ -4,6 +4,14 @@
 > verbal, ampliado con lo ya implementado en este repo como v1 (punto 6) y
 > con el proceso de referencia documentado en el `CONTRIBUTING.md` de
 > ds-connect (punto 4).
+>
+> **Estado (2026-07-24): implementado.** El motor de mapeo configurable, los
+> tres adaptadores de vendor (GitHub, GitLab, Azure DevOps) y el despachador
+> sobre .NET Aspire + Azure Container Apps ya existen en `src/` — ver
+> `openspec/changes/agentic-backlog-orchestrator/` y el `README.md` del
+> repo. Lo que falta: pilotar GitLab y Azure DevOps contra un proyecto real
+> (nunca verificado en vivo) y el control-plane centralizado
+> (`openspec/changes/orchestrator-portal/`).
 
 ## 1. Resumen ejecutivo
 
@@ -126,36 +134,40 @@ Azure Container Apps Job ("ai pod", KEDA scale 0..N por profundidad de cola)
 
 ## 6. Relación con lo ya implementado en este repo
 
-Este mismo repositorio (`aca_loop`) ya implementa una **v1 de este producto,
-acoplada a un único vendor y a un único cliente**: ver [`README.md`](../../README.md)
-y [`openspec/changes/ai-loop-aca-job/`](../../openspec/changes/ai-loop-aca-job/).
+Este mismo repositorio (`aca_loop`) implementaba una **v1 de este producto,
+acoplada a un único vendor y a un único cliente** (ver
+[`openspec/changes/ai-loop-aca-job/`](../../openspec/changes/ai-loop-aca-job/),
+aún sin archivar) y desde entonces se ha generalizado al producto completo
+descrito arriba: ver [`README.md`](../../README.md) y
+[`openspec/changes/agentic-backlog-orchestrator/`](../../openspec/changes/agentic-backlog-orchestrator/).
 
-Lo que ya existe hoy:
-
-| Pieza | Estado actual (v1, solo GitHub / ds-connect) | Generalización que pide este producto |
+| Pieza | v1 (solo GitHub / ds-connect) | Estado actual |
 |---|---|---|
-| Detección de estado | Webhook de GitHub `issues`, solo `action=="labeled"`, dos labels hardcodeadas | Adaptador por vendor + mapeo de estados configurable |
-| Despacho | Azure Container Apps Job + KEDA sobre Storage Queue | Mismo patrón ("AI pod" = ACA Job), generalizado a multi-vendor/multi-cliente en vez de a un único repo |
-| Imagen de agente | `agent/Dockerfile`: git, `gh`, Claude Code y opencode ya conviven en la misma imagen | Ya cumple el requisito de "las tres instalaciones a la vez"; falta exponer la selección de runtime como config de producto, no solo como detalle interno |
-| Comandos | `/ds:propose` y `/ds:implement`, fijos, propios de ds-connect | Instrucción por estado, configurable por cliente/repo |
-| Vendors soportados | Solo GitHub | Azure DevOps y GitLab quedan por construir (adaptador + credenciales + mapeo de estados nativos) |
+| Detección de estado | Webhook de GitHub `issues`, dos labels hardcodeadas | Adaptador por vendor (`src/modules/{GitHub,GitLab,AzureDevOps}/`) + motor de mapeo YAML validado en arranque |
+| Despacho | Azure Container Apps Job + KEDA sobre Storage Queue | Mismo patrón, generalizado a multi-vendor sobre .NET Aspire (`src/root/Orchestrator.{Receiver,Agent}`) |
+| Imagen de agente | Node: git, `gh`, Claude Code y opencode en la misma imagen | .NET + los mismos binarios; runtime seleccionado **por estado** vía el mapping, no fijo por despliegue |
+| Comandos | `/ds:propose`/`/ds:implement`, fijos | Instrucción por estado, configurable por cliente/repo en `mapping.yaml` |
+| Vendors soportados | Solo GitHub | GitHub (probado en producción), GitLab y Azure DevOps (implementados, con tests, **sin pilotar en vivo**) |
 
-Es decir: la parte más difícil (contrato del agente, manejo de tokens de
-corta duración, contrato de fallo a "blocked", imagen multi-runtime) ya está
-resuelta y probada en producción para un caso concreto. El trabajo de
-producto es **extraer la capa de abstracción de vendor y de configuración de
-estados**, manteniendo el despachador sobre ACA Jobs tal como está.
+Lo que queda pendiente, honesto: GitLab y Azure DevOps no se han probado
+contra un proyecto real (hace falta una cuenta/credenciales reales que no
+había disponibles al implementarlos); Azure DevOps usa PAT en vez de service
+principal de Entra por la misma razón (ver design.md). El control-plane
+centralizado para operar múltiples stacks de cliente a la vez es un
+producto aparte, ya propuesto: `openspec/changes/orchestrator-portal/`.
 
-## 7. Preguntas abiertas
+## 7. Preguntas abiertas (resueltas)
 
-- El despachador es **Azure Container Apps** (no AKS): cada disparo es un
-  "AI pod" = una ejecución de Container Apps Job, tal como ya funciona en la
-  v1. Queda por definir si el mismo entorno ACA sirve para todos los
-  clientes/repos (multi-tenant) o si cada cliente tiene su propio entorno
-  ACA aislado.
-- ¿La configuración de mapeo de estados vive por repo (como hoy, un
-  `config.yaml` en el propio repo target) o pasa a ser un recurso central
-  del producto (multi-cliente, multi-repo)?
-- ¿Qué pasa con el estado de la historia en el vendor si el Job falla? Hoy
-  la v1 lo resuelve moviendo a `status:blocked` + comentario; hay que
-  definir el equivalente en Azure DevOps (work item state) y GitLab.
+- ~~¿Un entorno ACA para todos los clientes, o uno por cliente?~~ **Resuelto:
+  un stack por cliente** — blast radius independiente; el control-plane
+  centralizado (`orchestrator-portal`) da la vista cross-cliente por
+  encima, sin reabrir esta decisión.
+- ~~¿Mapeo de estados por repo o como recurso central?~~ **Resuelto: se
+  despliega junto al orquestador** (fichero YAML horneado en la imagen del
+  Receiver), nunca leído del repo target — es superficie de autorización,
+  no debe ser editable por quien puede hacer push al repo.
+- ~~¿Qué pasa con el estado en el vendor si el Job falla?~~ **Resuelto:**
+  cada mapping declara `onFailureState` por estado; GitHub/GitLab
+  intercambian el label `status:*`, Azure DevOps escribe el campo
+  `System.State` directamente (ya no necesita el invariante de "un solo
+  label" porque el estado es de por sí univaluado).

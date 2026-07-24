@@ -1,0 +1,133 @@
+@inherits LayoutComponentBase
+@using Orchestrator.Portal.Registry
+@inject StackRegistry Registry
+
+<div class="app-shell">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <a class="sidebar-brand" href="">
+                <span class="brand-mark">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M3 12h4l3-8 4 16 3-8h4" />
+                    </svg>
+                </span>
+                <span class="brand-text">
+                    <span>Orchestrator</span>
+                    <span class="accent">PORTAL</span>
+                </span>
+            </a>
+        </div>
+
+        @* The stack list is stack data, so it lives behind the same Read gate as @Body rather than in
+           the always-visible chrome: portal-auth requires that a signed-in user holding no portal role
+           sees no stack data at all, and the client names are exactly that. Putting this nav outside
+           the gate would leak the client list to any authenticated tenant user. *@
+        <AuthorizeView Policy="@PortalPolicies.Read">
+            <Authorized>
+                <div class="sidebar-section-title">Stacks</div>
+                <nav class="nav-group">
+                    @* Driven off the registry, so adding a stack to stacks.yaml needs no markup change. *@
+                    @foreach (var stack in Registry.Stacks)
+                    {
+                        <NavLink class="nav-item" href="@($"stacks/{stack.Id}")">
+                            <span class="nav-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                     stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                                    <path d="M3 9h18" />
+                                </svg>
+                            </span>
+                            <span class="nav-label">@stack.DisplayName</span>
+                        </NavLink>
+                    }
+                </nav>
+            </Authorized>
+        </AuthorizeView>
+
+        <div class="sidebar-spacer"></div>
+
+        @* The user card shows the operator their own identity and role, never stack data, so it stays
+           outside the Read gate: a role-less user needs to see which account they are signed in as to
+           act on the NoRoleNotice message. *@
+        <AuthorizeView>
+            <Authorized>
+                <div class="user-card">
+                    <span class="avatar">@Initials(context.User.Identity?.Name)</span>
+                    <span class="user-info">
+                        <span class="user-name">@(context.User.Identity?.Name ?? "unknown")</span>
+                        <span class="user-role">@RoleLabel(context.User)</span>
+                    </span>
+                    <a class="user-card-action" href="MicrosoftIdentity/Account/SignOut" title="Sign out"
+                       aria-label="Sign out">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                            <path d="M16 17l5-5-5-5" />
+                            <path d="M21 12H9" />
+                        </svg>
+                    </a>
+                </div>
+            </Authorized>
+        </AuthorizeView>
+    </aside>
+
+    <div class="main">
+        @* Pages own their title and breadcrumbs but render them up here, through a section. Keeping the
+           h1 inside the page's own render tree matters: Routes.razor focuses "h1" on navigation, so a
+           layout-owned title would break focus management for every page at once. *@
+        <div class="topbar">
+            <div class="topbar-left">
+                <SectionOutlet SectionName="@PortalSections.PageHeader" />
+            </div>
+            <div class="topbar-right">
+                <SectionOutlet SectionName="@PortalSections.PageActions" />
+            </div>
+        </div>
+
+        <div class="page">
+            @* Every page is role-gated here rather than by a per-page attribute: one place to get right, and
+               a page added later cannot forget it. The endpoint-level fallback policy has already required a
+               signed-in user, so the NotAuthorized branch means exactly "signed in, but holds no portal
+               role" -- which gets an explanation instead of a 403. *@
+            <AuthorizeView Policy="@PortalPolicies.Read">
+                <Authorized>
+                    @Body
+                </Authorized>
+                <NotAuthorized>
+                    <NoRoleNotice />
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+    </div>
+</div>
+
+@code {
+    /// <summary>Two-letter monogram for the avatar; falls back to "?" rather than rendering an empty
+    /// circle.</summary>
+    private static string Initials(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return "?";
+        }
+
+        // Entra names arrive either as "Given Family" or as a UPN; taking the first letter of the first
+        // two word-ish parts handles both without branching on which one this is.
+        var parts = name.Split([' ', '.', '@', '_', '-'], StringSplitOptions.RemoveEmptyEntries);
+
+        return parts.Length switch
+        {
+            0 => "?",
+            1 => parts[0][..1].ToUpperInvariant(),
+            _ => string.Concat(parts[0][..1], parts[1][..1]).ToUpperInvariant(),
+        };
+    }
+
+    /// <summary>The most privileged role held, shown so an operator can tell whether the verbs will be
+    /// available to them before they go looking for buttons that are not there.</summary>
+    private static string RoleLabel(System.Security.Claims.ClaimsPrincipal user) =>
+        user.IsInRole(PortalRoles.Operator) ? PortalRoles.Operator
+        : user.IsInRole(PortalRoles.Reader) ? PortalRoles.Reader
+        : "no portal role";
+}

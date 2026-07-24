@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Orchestrator.Constants</RootNamespace>
+  </PropertyGroup>
+</Project>

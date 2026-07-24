@@ -1,6 +1,12 @@
 # Node
 node_modules/
 
+# .NET
+bin/
+obj/
+*.user
+.vs/
+
 # Local .terraform directories
 .terraform/
 

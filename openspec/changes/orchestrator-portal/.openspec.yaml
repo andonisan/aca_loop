@@ -1,0 +1,5 @@
+schema: spec-driven
+created: 2026-07-24
+goal: "Central web control plane (internal-only) over the per-client
+  orchestrator stacks: read-model dashboard + small operational verbs, no config
+  editing"

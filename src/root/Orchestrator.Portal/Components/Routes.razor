@@ -1,0 +1,9 @@
+@* Plain RouteView: authorization is layered deliberately and only in two places — the endpoint
+   fallback policy (signed in) and MainLayout's Read-policy gate (holds a portal role). Adding
+   AuthorizeRouteView here as well would be a third, overlapping mechanism. *@
+<Router AppAssembly="typeof(Program).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="routeData" DefaultLayout="typeof(MainLayout)" />
+        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+    </Found>
+</Router>

@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Orchestrator.Agent</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="appsettings*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\shared\Orchestrator.BuildingBlocks\Orchestrator.BuildingBlocks.csproj" />
+    <ProjectReference Include="..\..\shared\Orchestrator.Constants\Orchestrator.Constants.csproj" />
+    <ProjectReference Include="..\..\shared\Orchestrator.ServiceDefaults\Orchestrator.ServiceDefaults.csproj" />
+    <!-- Referenced only so their assemblies land in the output directory — composition itself is
+         reflection-based module discovery (Orchestrator.BuildingBlocks.Modules.ModuleExtensions). -->
+    <ProjectReference Include="..\..\modules\Backlog\Orchestrator.Modules.Backlog.Contracts\Orchestrator.Modules.Backlog.Contracts.csproj" />
+    <ProjectReference Include="..\..\modules\Execution\Orchestrator.Modules.Execution\Orchestrator.Modules.Execution.csproj" />
+    <ProjectReference Include="..\..\modules\GitHub\Orchestrator.Modules.GitHub\Orchestrator.Modules.GitHub.csproj" />
+    <ProjectReference Include="..\..\modules\GitLab\Orchestrator.Modules.GitLab\Orchestrator.Modules.GitLab.csproj" />
+    <ProjectReference Include="..\..\modules\AzureDevOps\Orchestrator.Modules.AzureDevOps\Orchestrator.Modules.AzureDevOps.csproj" />
+  </ItemGroup>
+</Project>

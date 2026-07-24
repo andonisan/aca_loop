@@ -1,0 +1,20 @@
+@using Orchestrator.Portal.Presentation
+
+@* Renders a status badge from a treatment. This exists rather than pages writing the two spans
+   themselves because the design system forbids communicating status by colour alone: routing every
+   status through one component means the dot-plus-label markup cannot be forgotten, and a page cannot
+   reach for a colour class directly. Get the treatment from StatusTreatment, never by hand. *@
+
+<span class="badge @Badge.CssClass" title="@Title">
+    <span class="dot"></span>@Badge.Label
+</span>
+
+@code {
+    /// <summary>The treatment to render — obtain it from <c>StatusTreatment</c>.</summary>
+    [Parameter, EditorRequired]
+    public required StatusBadge Badge { get; set; }
+
+    /// <summary>Optional hover detail, e.g. the raw wire value behind an unknown state.</summary>
+    [Parameter]
+    public string? Title { get; set; }
+}

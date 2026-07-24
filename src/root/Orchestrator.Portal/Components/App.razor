@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    <title>Orchestrator Portal</title>
+    @* Geist, as Atlas loads it. The stack in --font-sans falls back to system-ui, so a CSP or an
+       air-gapped network that blocks fonts.googleapis.com degrades the type rather than the layout.
+       Self-host under wwwroot/fonts if that fallback ever becomes the normal case. *@
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" />
+    <link rel="stylesheet" href="@Assets["css/atlas.css"]" />
+    <HeadOutlet />
+</head>
+
+<body>
+    <Routes />
+    <script src="_framework/blazor.web.js"></script>
+</body>
+
+</html>

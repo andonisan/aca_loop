@@ -24,3 +24,15 @@ output "github_webhook_secret" {
   value       = random_password.github_webhook_secret.result
   sensitive   = true
 }
+
+output "gitlab_webhook_secret" {
+  description = "Paste this into the GitLab project/group webhook's secret token field. Empty when enable_gitlab = false."
+  value       = var.enable_gitlab ? random_password.gitlab_webhook_secret[0].result : null
+  sensitive   = true
+}
+
+output "azure_devops_webhook_password" {
+  description = "Paste this, paired with var.azure_devops_webhook_username, into the Azure DevOps Service Hooks subscription's Basic authentication fields. Empty when enable_azure_devops = false."
+  value       = var.enable_azure_devops ? random_password.azure_devops_webhook_password[0].result : null
+  sensitive   = true
+}

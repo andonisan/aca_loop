@@ -1,0 +1,16 @@
+# State-action-config mapping — deployed with the orchestrator, never read from the target repo
+# (design.md D2). This sample reproduces v1's ds-connect configuration exactly (README.md /
+# CONTRIBUTING.md): the two machine gates, /ds:propose and /ds:implement, both on the Claude
+# runtime, both failing to status:blocked.
+targets:
+  - vendor: GitHub
+    repo: "your-org/ds-connect"
+    states:
+      "status:ready-for-proposal":
+        action: /ds:propose
+        runtime: Claude
+        onFailureState: "status:blocked"
+      "status:ready-for-implementation":
+        action: /ds:implement
+        runtime: Claude
+        onFailureState: "status:blocked"

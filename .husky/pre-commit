@@ -1,0 +1,14 @@
+#!/bin/sh
+if [ "$HUSKY" = "0" ]; then
+  exit 0
+fi
+
+set -e
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+
+STAGED_CS=$(git -C "$REPO_ROOT" diff --cached --name-only --diff-filter=ACM -- '*.cs' | sed "s#^#$REPO_ROOT/#")
+if [ -n "$STAGED_CS" ]; then
+  (cd "$REPO_ROOT" && dotnet csharpier format $STAGED_CS)
+  git -C "$REPO_ROOT" add $STAGED_CS
+fi

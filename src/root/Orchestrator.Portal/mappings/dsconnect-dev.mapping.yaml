@@ -1,0 +1,15 @@
+# Bundled copy of the dsconnect-dev stack's mapping, deployed alongside the portal (task 5.3).
+# Read-only here: the portal never edits a mapping — changing one is a PR against the config repo
+# that redeploys the stack (design D2 / proposal guardrail).
+targets:
+  - vendor: GitHub
+    repo: "your-org/ds-connect"
+    states:
+      "status:ready-for-proposal":
+        action: /ds:propose
+        runtime: Claude
+        onFailureState: "status:blocked"
+      "status:ready-for-implementation":
+        action: /ds:implement
+        runtime: Claude
+        onFailureState: "status:blocked"

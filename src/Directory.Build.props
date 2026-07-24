@@ -1,0 +1,44 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'"
+      >true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+  <!-- Auto-attach the module boundary analyzers to every `.Modules.*` implementation
+       project (not test projects, which also match `.Modules.` in their name). -->
+  <ItemGroup Condition="$(MSBuildProjectName.Contains('.Modules.')) AND !$(MSBuildProjectName.EndsWith('Tests'))">
+    <ProjectReference
+      Include="$(MSBuildThisFileDirectory)shared\Orchestrator.ArchitectureAnalyzers\Orchestrator.ArchitectureAnalyzers.csproj"
+      OutputItemType="Analyzer"
+      ReferenceOutputAssembly="false"
+    />
+  </ItemGroup>
+
+  <!-- One-time, idempotent commit-hook activation: point git at .husky/ (repo root) on the first
+       build, so a fresh clone gets hooks with no manual step. Hooked to BeforeBuild rather than
+       Restore — solution-level `dotnet restore`/`dotnet build` use a static-graph restore that
+       skips BeforeTargets="Restore" custom targets, but BeforeBuild always runs. Skipped in
+       CI / HUSKY=0; `git config` is a no-op if the value is already set, so re-running is harmless. -->
+  <Target
+    Name="HuskyInstall"
+    BeforeTargets="BeforeBuild"
+    Condition="'$(HUSKY)' != '0' AND '$(CI)' != 'true' AND '$(GITHUB_ACTIONS)' != 'true'"
+  >
+    <Exec
+      Command="git config core.hooksPath ../.husky"
+      WorkingDirectory="$(MSBuildThisFileDirectory)"
+      ContinueOnError="true"
+      StandardOutputImportance="low"
+      StandardErrorImportance="low"
+    />
+  </Target>
+</Project>

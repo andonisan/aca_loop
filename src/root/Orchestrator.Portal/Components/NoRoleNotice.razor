@@ -1,0 +1,52 @@
+@* Shown to a tenant user who signed in successfully but holds neither portal app role. Naming the
+   roles is deliberate: the fix is an Entra group assignment, so the message must say what to ask for
+   (portal-auth spec: "denies access with a message naming the required roles").
+
+   This renders its own h1 inside the page well rather than through PortalSections.PageHeader: the
+   topbar sections are filled by routed pages, and this component replaces the page rather than being
+   one. Routes.razor still finds an h1 to focus. *@
+<h1 class="page-title-row" style="margin:0 0 var(--sp-1)">No portal access</h1>
+
+<div class="banner">
+    <span class="banner-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 8v4M12 16h.01" />
+        </svg>
+    </span>
+    <span>
+        You are signed in as <strong>@AccountName</strong>, but this account holds neither portal role,
+        so no stack data is shown.
+    </span>
+</div>
+
+<div class="card" style="max-width:640px">
+    <div class="card-head">
+        <h2>Ask for one of these in Entra ID</h2>
+    </div>
+    <div class="card-body">
+        <dl class="dl" style="grid-template-columns:auto 1fr">
+            <dt><span class="badge neutral mono">@PortalRoles.Reader</span></dt>
+            <dd>Read every view.</dd>
+            <dt><span class="badge info mono">@PortalRoles.Operator</span></dt>
+            <dd>Read, plus retry, cancel, and manual dispatch.</dd>
+        </dl>
+    </div>
+</div>
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationState { get; set; }
+
+    string AccountName { get; set; } = "unknown";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (AuthenticationState is not null)
+        {
+            var state = await AuthenticationState;
+            AccountName = state.User.Identity?.Name ?? "unknown";
+        }
+    }
+}

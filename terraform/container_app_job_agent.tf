@@ -6,10 +6,11 @@ resource "azurerm_container_app_job" "agent" {
   workload_profile_name        = "Consumption"
   replica_timeout_in_seconds   = var.replica_timeout_seconds
 
-  # Agent runs are not idempotent-retryable: a failed run flips the issue to
-  # status:blocked (handled inside the entrypoint) instead of being retried
-  # at the Azure job layer. The storage-queue visibility timeout still
-  # covers entrypoint-level crashes, capped by the poison-message guard.
+  # Agent runs are not idempotent-retryable: a failed run flips the item to
+  # its mapped on_failure_state (handled inside ExecutionService) instead of
+  # being retried at the Azure job layer. The storage-queue visibility
+  # timeout still covers entrypoint-level crashes, capped by the
+  # poison-message guard.
   replica_retry_limit = 0
 
   tags = var.tags
@@ -56,37 +57,65 @@ resource "azurerm_container_app_job" "agent" {
       cpu    = 1.0
       memory = "2Gi"
 
+      # Bootstraps Orchestrator.ServiceDefaults.AddOptionalAzureKeyVault -- every secret in the
+      # vault becomes a configuration key (Vendors--GitHub--PrivateKeyPem -> Vendors:GitHub:PrivateKeyPem).
       env {
         name  = "KEY_VAULT_URI"
         value = azurerm_key_vault.this.vault_uri
       }
       env {
-        name  = "STORAGE_ACCOUNT_NAME"
+        name  = "Queue__AccountName"
         value = azurerm_storage_account.this.name
       }
       env {
-        name  = "QUEUE_NAME"
+        name  = "Queue__QueueName"
         value = azurerm_storage_queue.ai_jobs.name
       }
       env {
-        name  = "GITHUB_APP_INSTALLATION_ID"
+        name  = "Vendors__GitHub__InstallationId"
         value = var.github_app_installation_id
       }
       env {
-        name  = "DEFAULT_AGENT_RUNTIME"
-        value = var.default_agent_runtime
+        name  = "Vendors__GitHub__BotLogin"
+        value = var.github_bot_login
       }
       env {
-        name  = "AGENT_BOT_LOGIN"
-        value = var.agent_bot_login
-      }
-      env {
-        name  = "AGENT_MAX_TURNS"
+        name  = "Execution__MaxTurns"
         value = tostring(var.agent_max_turns)
       }
       env {
-        name  = "REPLICA_TIMEOUT_SECONDS"
+        name  = "Execution__ReplicaTimeoutSeconds"
         value = tostring(var.replica_timeout_seconds)
+      }
+
+      dynamic "env" {
+        for_each = var.enable_gitlab ? [1] : []
+        content {
+          name  = "Vendors__GitLab__BotUsername"
+          value = var.gitlab_bot_username
+        }
+      }
+      dynamic "env" {
+        for_each = var.enable_gitlab ? [1] : []
+        content {
+          name  = "Vendors__GitLab__BaseUrl"
+          value = var.gitlab_base_url
+        }
+      }
+
+      dynamic "env" {
+        for_each = var.enable_azure_devops ? [1] : []
+        content {
+          name  = "Vendors__AzureDevOps__Organization"
+          value = var.azure_devops_organization
+        }
+      }
+      dynamic "env" {
+        for_each = var.enable_azure_devops ? [1] : []
+        content {
+          name  = "Vendors__AzureDevOps__BotIdentity"
+          value = var.azure_devops_bot_identity
+        }
       }
     }
   }

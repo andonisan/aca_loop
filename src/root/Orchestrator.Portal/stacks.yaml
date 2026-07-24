@@ -1,0 +1,19 @@
+# Stack registry — the explicit list of client stacks this portal may read (design D2). Membership
+# is deliberately not discovered from Azure tags: the portal concentrates read access across every
+# client, so which stacks it can see is an authorization artifact and belongs in a reviewed file.
+#
+# `mappingFile` paths are relative to this file and must point at the SAME mapping the stack's
+# receiver runs — bundled from the same GitOps source at deploy time (task 5.3). The portal resolves
+# actions through it, so a copy that has drifted would make the portal disagree with the receiver
+# about which states dispatch.
+stacks:
+  - id: dsconnect-dev
+    displayName: ds-connect (dev)
+    mappingFile: mappings/dsconnect-dev.mapping.yaml
+    azure:
+      subscriptionId: "00000000-0000-0000-0000-000000000000"
+      resourceGroup: rg-dsconnect-dev
+      queueServiceUri: https://stdsconnectdev.queue.core.windows.net
+      queueName: ai-jobs
+      jobName: ca-dsconnect-dev-agent
+      logAnalyticsWorkspaceId: "00000000-0000-0000-0000-000000000000"

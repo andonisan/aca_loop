@@ -4,21 +4,34 @@ subscription_id = "00000000-0000-0000-0000-000000000000"
 # prerequisites for the manual creation steps.
 github_app_id              = "123456"
 github_app_installation_id = "12345678"
-agent_bot_login            = "my-ai-loop-app[bot]"
+github_bot_login           = "my-ai-loop-app[bot]"
 
-# Registry hosting the two images built from this repo.
+# Registry hosting the images built from this repo (src/root/Orchestrator.Receiver/Dockerfile,
+# src/root/Orchestrator.Agent/Dockerfile -- both built with context src/).
 container_registry_id           = "/subscriptions/.../resourceGroups/.../providers/Microsoft.ContainerRegistry/registries/myregistry"
 container_registry_login_server = "myregistry.azurecr.io"
-webhook_receiver_image          = "myregistry.azurecr.io/ai-loop-webhook:latest"
+webhook_receiver_image          = "myregistry.azurecr.io/ai-loop-receiver:latest"
 agent_image                     = "myregistry.azurecr.io/ai-loop-agent:latest"
 
 # Optional overrides (defaults shown).
 # location                       = "westeurope"
 # resource_group_name            = "rg-ai-loop"
 # name_prefix                    = "ai-loop"
-# gate_labels                    = "status:ready-for-proposal,status:ready-for-implementation"
-# default_agent_runtime          = "claude"
 # agent_max_turns                = 80
 # max_concurrent_agents          = 4
 # replica_timeout_seconds        = 3600
 # queue_polling_interval_seconds = 30
+
+# Optional: GitLab, on top of the always-on GitHub adapter. The access token
+# itself is never a tfvar -- push it to Key Vault out-of-band after apply:
+#   az keyvault secret set --name Vendors--GitLab--AccessToken --value <token>
+# enable_gitlab       = true
+# gitlab_base_url     = "https://gitlab.com"
+# gitlab_bot_username = "ai-loop-bot"
+
+# Optional: Azure DevOps, on top of the always-on GitHub adapter. The PAT
+# itself is never a tfvar -- push it to Key Vault out-of-band after apply:
+#   az keyvault secret set --name Vendors--AzureDevOps--PersonalAccessToken --value <pat>
+# enable_azure_devops       = true
+# azure_devops_organization = "contoso"
+# azure_devops_bot_identity = "ai-loop-bot@contoso.com"

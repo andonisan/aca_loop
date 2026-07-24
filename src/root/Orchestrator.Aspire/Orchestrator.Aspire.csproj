@@ -1,0 +1,22 @@
+<Project Sdk="Aspire.AppHost.Sdk/13.4.6">
+  <PropertyGroup>
+    <RootNamespace>Orchestrator.Aspire</RootNamespace>
+    <OutputType>Exe</OutputType>
+    <UserSecretsId>b1d2a5b0-3b0e-4d4e-9c2f-2b6a7a1e9f10</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.Azure.Storage" />
+    <PackageReference Include="Aspire.Hosting.Azure.KeyVault" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference
+      Include="..\..\shared\Orchestrator.Constants\Orchestrator.Constants.csproj"
+      IsAspireProjectResource="false"
+    />
+    <ProjectReference Include="..\Orchestrator.Receiver\Orchestrator.Receiver.csproj" />
+    <ProjectReference Include="..\Orchestrator.Agent\Orchestrator.Agent.csproj" />
+    <ProjectReference Include="..\Orchestrator.Portal\Orchestrator.Portal.csproj" />
+  </ItemGroup>
+</Project>
