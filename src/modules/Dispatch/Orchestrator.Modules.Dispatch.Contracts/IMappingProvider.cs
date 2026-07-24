@@ -1,6 +1,6 @@
 using Orchestrator.Modules.Backlog.Contracts;
 
-namespace Orchestrator.Modules.Dispatch;
+namespace Orchestrator.Modules.Dispatch.Contracts;
 
 /// <summary>Resolves a canonical event against the loaded, validated mapping config.</summary>
 public interface IMappingProvider

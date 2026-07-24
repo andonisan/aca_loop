@@ -1,5 +1,6 @@
 using Orchestrator.Modules.Backlog.Contracts;
 using Orchestrator.Modules.Dispatch;
+using Orchestrator.Modules.Dispatch.Contracts;
 using Shouldly;
 
 namespace Orchestrator.Modules.Dispatch.UnitTests;
@@ -56,7 +57,13 @@ public class MappingLoader_Should_Constraint
         var provider = new MappingProvider(config);
 
         provider
-            .TryResolve(Vendor.GitHub, null, "acme/widgets", "status:some-other-state", out var mapping)
+            .TryResolve(
+                Vendor.GitHub,
+                null,
+                "acme/widgets",
+                "status:some-other-state",
+                out var mapping
+            )
             .ShouldBeFalse();
         mapping.ShouldBeNull();
     }
@@ -68,7 +75,13 @@ public class MappingLoader_Should_Constraint
         var provider = new MappingProvider(config);
 
         provider
-            .TryResolve(Vendor.GitHub, null, "someone-else/repo", "status:ready-for-proposal", out _)
+            .TryResolve(
+                Vendor.GitHub,
+                null,
+                "someone-else/repo",
+                "status:ready-for-proposal",
+                out _
+            )
             .ShouldBeFalse();
     }
 

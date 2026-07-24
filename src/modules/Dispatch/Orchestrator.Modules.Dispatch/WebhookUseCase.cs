@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Orchestrator.BuildingBlocks.Modules;
 using Orchestrator.Constants;
 using Orchestrator.Modules.Backlog.Contracts;
+using Orchestrator.Modules.Dispatch.Contracts;
 
 namespace Orchestrator.Modules.Dispatch;
 

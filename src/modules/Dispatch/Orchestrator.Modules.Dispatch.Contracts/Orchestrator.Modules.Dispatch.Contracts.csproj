@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Orchestrator.Modules.Dispatch.Contracts</RootNamespace>
+  </PropertyGroup>
+
+  <!-- YamlDotNet lives here rather than in the implementation because the mapping loader/validator
+       is itself the contract: the Portal must reuse it verbatim rather than re-parse the file. -->
+  <ItemGroup>
+    <PackageReference Include="YamlDotNet" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\shared\Orchestrator.BuildingBlocks\Orchestrator.BuildingBlocks.csproj" />
+    <ProjectReference Include="..\..\Backlog\Orchestrator.Modules.Backlog.Contracts\Orchestrator.Modules.Backlog.Contracts.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,4 +1,4 @@
-namespace Orchestrator.Modules.Dispatch;
+namespace Orchestrator.Modules.Dispatch.Contracts;
 
 /// <summary>Where the state-action-config mapping file lives. Deployed with the orchestrator (baked
 /// or mounted), never read from a target repo — see design.md D2.</summary>

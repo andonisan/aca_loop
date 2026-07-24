@@ -30,6 +30,7 @@
     <Project Path="modules/AzureDevOps/Orchestrator.Modules.AzureDevOps/Orchestrator.Modules.AzureDevOps.csproj" />
   </Folder>
   <Folder Name="/modules/Dispatch/">
+    <Project Path="modules/Dispatch/Orchestrator.Modules.Dispatch.Contracts/Orchestrator.Modules.Dispatch.Contracts.csproj" />
     <Project Path="modules/Dispatch/Orchestrator.Modules.Dispatch/Orchestrator.Modules.Dispatch.csproj" />
   </Folder>
   <Folder Name="/modules/Execution/">

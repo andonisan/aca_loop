@@ -1,7 +1,8 @@
-using Orchestrator.BuildingBlocks.Modules;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Orchestrator.BuildingBlocks.Modules;
+using Orchestrator.Modules.Dispatch.Contracts;
 
 namespace Orchestrator.Modules.Dispatch;
 
@@ -13,7 +14,9 @@ public sealed class DispatchModule : EndpointModuleBase
     {
         services.Configure<QueueOptions>(configuration.GetSection(QueueOptions.SectionName));
 
-        services.AddSingleton(sp => QueueClientFactory.Create(sp.GetRequiredService<IOptions<QueueOptions>>()));
+        services.AddSingleton(sp =>
+            QueueClientFactory.Create(sp.GetRequiredService<IOptions<QueueOptions>>())
+        );
         services.AddSingleton<IWorkItemQueue, AzureStorageWorkItemQueue>();
 
         // Loaded and validated eagerly, here, before the host finishes building — an invalid

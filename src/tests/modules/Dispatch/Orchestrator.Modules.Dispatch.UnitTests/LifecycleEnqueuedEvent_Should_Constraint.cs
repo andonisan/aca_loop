@@ -2,6 +2,7 @@ using System.Text;
 using Microsoft.AspNetCore.Http;
 using Orchestrator.Constants;
 using Orchestrator.Modules.Backlog.Contracts;
+using Orchestrator.Modules.Dispatch.Contracts;
 using Shouldly;
 
 namespace Orchestrator.Modules.Dispatch.UnitTests;

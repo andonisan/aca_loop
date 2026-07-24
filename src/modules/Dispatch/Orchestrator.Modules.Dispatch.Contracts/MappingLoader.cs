@@ -2,7 +2,7 @@ using Orchestrator.Modules.Backlog.Contracts;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
-namespace Orchestrator.Modules.Dispatch;
+namespace Orchestrator.Modules.Dispatch.Contracts;
 
 /// <summary>
 /// Loads and validates the state-action-config mapping file. Validation is structural (required
@@ -11,7 +11,7 @@ namespace Orchestrator.Modules.Dispatch;
 /// dependency; every violation is collected before throwing so a misconfigured deploy sees the
 /// full list in one pass, not one error per restart.
 /// </summary>
-static class MappingLoader
+public static class MappingLoader
 {
     public static MappingConfig LoadFromFile(string path)
     {
@@ -86,7 +86,9 @@ static class MappingLoader
                     }
                     else if (!Enum.TryParse(rawState.Runtime, ignoreCase: true, out runtime))
                     {
-                        errors.Add($"{statePrefix}.runtime '{rawState.Runtime}' is not a known runtime");
+                        errors.Add(
+                            $"{statePrefix}.runtime '{rawState.Runtime}' is not a known runtime"
+                        );
                     }
 
                     if (
@@ -113,7 +115,8 @@ static class MappingLoader
         if (errors.Count > 0)
         {
             throw new InvalidOperationException(
-                "Invalid mapping configuration:\n" + string.Join('\n', errors.Select(e => $"  - {e}"))
+                "Invalid mapping configuration:\n"
+                    + string.Join('\n', errors.Select(e => $"  - {e}"))
             );
         }
 

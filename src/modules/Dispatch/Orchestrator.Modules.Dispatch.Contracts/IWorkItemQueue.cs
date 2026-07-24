@@ -1,6 +1,6 @@
 using Orchestrator.Modules.Backlog.Contracts;
 
-namespace Orchestrator.Modules.Dispatch;
+namespace Orchestrator.Modules.Dispatch.Contracts;
 
 public interface IWorkItemQueue
 {

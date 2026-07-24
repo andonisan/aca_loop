@@ -1,4 +1,4 @@
-namespace Orchestrator.Modules.Dispatch;
+namespace Orchestrator.Modules.Dispatch.Contracts;
 
 /// <summary>The raw YAML shape of the mapping file, before validation/parsing into
 /// <see cref="MappingConfig"/>. Field names are camelCase on the wire (YamlDotNet's
