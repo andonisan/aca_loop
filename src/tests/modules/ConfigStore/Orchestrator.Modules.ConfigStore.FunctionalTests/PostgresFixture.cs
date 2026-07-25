@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Orchestrator.Modules.ConfigStore.Infrastructure.Persistence;
 using Testcontainers.PostgreSql;
 
-namespace Orchestrator.Modules.ConfigStore.UnitTests;
+namespace Orchestrator.Modules.ConfigStore.FunctionalTests;
 
 /// <summary>
 /// A real Postgres, with this module's real migrations applied. Not an in-memory provider and not SQLite:
@@ -20,7 +20,22 @@ namespace Orchestrator.Modules.ConfigStore.UnitTests;
 /// </summary>
 public sealed class PostgresFixture : IAsyncLifetime
 {
-    readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:18-alpine").Build();
+    /// <summary>
+    /// The conventional Docker Hub name, overridable by <c>ORCHESTRATOR_POSTGRES_IMAGE</c>.
+    /// <para>
+    /// Overridable deliberately. ds-connect pins its images as private <c>const</c> fields, which means a
+    /// machine or a runner that cannot reach Docker Hub has no way in short of editing the shared base —
+    /// and Docker Hub is unreachable from at least one machine this repo is developed on, where MCR is
+    /// fine. The default stays conventional so nothing changes for a normal network; the override exists
+    /// so a registry mirror can be pointed at without touching code.
+    /// </para>
+    /// </summary>
+    static string Image =>
+        Environment.GetEnvironmentVariable("ORCHESTRATOR_POSTGRES_IMAGE") is { Length: > 0 } image
+            ? image
+            : "postgres:18-alpine";
+
+    readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder(Image).Build();
 
     public string ConnectionString => _postgres.GetConnectionString();
 

@@ -3,7 +3,7 @@ using Orchestrator.Modules.Backlog.Contracts;
 using Orchestrator.Modules.ConfigStore.Infrastructure.Persistence;
 using Shouldly;
 
-namespace Orchestrator.Modules.ConfigStore.UnitTests;
+namespace Orchestrator.Modules.ConfigStore.FunctionalTests;
 
 /// <summary>
 /// The read path and the schema, against a real Postgres with the real migration applied. What is being

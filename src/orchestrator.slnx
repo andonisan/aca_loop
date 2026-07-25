@@ -52,6 +52,7 @@
   </Folder>
   <Folder Name="/tests/modules/ConfigStore/">
     <Project Path="tests/modules/ConfigStore/Orchestrator.Modules.ConfigStore.UnitTests/Orchestrator.Modules.ConfigStore.UnitTests.csproj" />
+    <Project Path="tests/modules/ConfigStore/Orchestrator.Modules.ConfigStore.FunctionalTests/Orchestrator.Modules.ConfigStore.FunctionalTests.csproj" />
   </Folder>
   <Folder Name="/tests/modules/Dispatch/">
     <Project Path="tests/modules/Dispatch/Orchestrator.Modules.Dispatch.UnitTests/Orchestrator.Modules.Dispatch.UnitTests.csproj" />

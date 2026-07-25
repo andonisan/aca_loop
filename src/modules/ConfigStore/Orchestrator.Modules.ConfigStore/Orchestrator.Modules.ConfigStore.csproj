@@ -20,5 +20,6 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Orchestrator.Modules.ConfigStore.UnitTests" />
+    <InternalsVisibleTo Include="Orchestrator.Modules.ConfigStore.FunctionalTests" />
   </ItemGroup>
 </Project>
