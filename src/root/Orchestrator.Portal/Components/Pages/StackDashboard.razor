@@ -1,4 +1,10 @@
 @page "/stacks/{StackId}"
+@* This page is the only one with a stateful control -- the history window selector -- and without an
+   explicit render mode nothing opts into interactivity, so its @onchange never fires and the selector is
+   inert markup. The host registers interactive server components; a component still has to ask.
+   Deliberately per page rather than on <Routes />: every other page is read-only, and a circuit per
+   viewer is a cost worth paying only where something actually changes. *@
+@rendermode InteractiveServer
 @using Orchestrator.Modules.Backlog.Contracts
 @using Orchestrator.Portal.Presentation
 @using Orchestrator.Portal.ReadModel

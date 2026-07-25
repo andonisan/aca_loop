@@ -19,7 +19,12 @@
 
 ## 3. Interactions
 
-- [ ] 3.1 The history window selector re-reads and re-renders against the new window. Untestable over HTTP: it only works over the interactive circuit
+> 3.2-3.4 are **blocked on `orchestrator-portal` group 4**: they assert on verb affordances (dispatch
+> and cancel buttons, and their absence for a reader) and no page invokes `ManualDispatch` or
+> `CancelExecution` yet. The verbs exist; the UI that reaches them does not. 3.1 needed no UI work and is
+> done.
+
+- [x] 3.1 The history window selector re-reads and re-renders against the new window. Untestable over HTTP: it only works over the interactive circuit — **and it did not work at all.** No component declared a render mode, so despite the host registering interactive server components, every page rendered as static SSR and the selector's `@onchange` never fired. Written test-first: it failed on the post-selection assertion, which is exactly the failure the task predicted the suite would be needed for. Fixed with `@rendermode InteractiveServer` on `StackDashboard` only — every other page is read-only and does not need a circuit per viewer
 - [ ] 3.2 Manual dispatch reports each of its three outcomes distinctly, and the refusal shows the live state that caused it — the detail that makes a refusal actionable rather than merely negative
 - [ ] 3.3 Cancel on an already-terminal execution reports a no-op rather than success
 - [ ] 3.4 A reader-role user cannot reach the verbs from the UI. The server-side refusal is covered elsewhere; this covers that the affordance is absent, which is a different claim
