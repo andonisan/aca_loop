@@ -2,7 +2,9 @@
    queued" and "we could not ask" must not look the same, and only the first is safe to act on. The reason
    goes in the title so the table stays scannable. *@
 
-<span class="badge orange" title="@Reason">
+@* data-testid, not the class name: the class is a styling decision that may change, while "this cell is
+   unreadable" is the claim the browser tests are actually making (portal-browser-tests D3). *@
+<span class="badge orange" data-testid="unreadable" title="@Reason">
     <span class="dot"></span>unreadable
 </span>
 

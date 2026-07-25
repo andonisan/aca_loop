@@ -37,12 +37,14 @@
             <tbody>
                 @foreach (var row in _rows)
                 {
-                    <tr>
+                    @* Keyed by stack id so a test can address one stack's row without depending on the
+                       order rows happen to load in. *@
+                    <tr data-testid="rollup-row" data-stack-id="@row.Stack.Id">
                         <td>
                             <div class="cell-primary"><a href="@($"/stacks/{row.Stack.Id}")">@row.Stack.DisplayName</a></div>
                             <div class="cell-secondary mono">@row.Stack.Id</div>
                         </td>
-                        <td>
+                        <td data-testid="cell-queue">
                             @if (row.Queue.IsAvailable)
                             {
                                 <StatusBadgeView Badge="StatusTreatment.ForQueueDepth(row.Queue.Value, warnAt: 5, dangerAt: 20)" />
@@ -52,7 +54,7 @@
                                 <Unreadable Reason="@row.Queue.Unavailable" />
                             }
                         </td>
-                        <td>
+                        <td data-testid="cell-pods">
                             @if (row.Executions.IsAvailable)
                             {
                                 <span class="mono">@row.Executions.Value!.Count(e => e.IsRunning)</span>
@@ -62,7 +64,7 @@
                                 <Unreadable Reason="@row.Executions.Unavailable" />
                             }
                         </td>
-                        <td>
+                        <td data-testid="cell-outcome">
                             @if (!row.History.IsAvailable)
                             {
                                 <Unreadable Reason="@row.History.Unavailable" />
@@ -77,7 +79,7 @@
                                 <StatusBadgeView Badge="StatusTreatment.ForOutcome(last.Outcome)" Title="@Format.Absolute(last.At)" />
                             }
                         </td>
-                        <td>
+                        <td data-testid="cell-success">
                             @if (!row.History.IsAvailable)
                             {
                                 <Unreadable Reason="@row.History.Unavailable" />

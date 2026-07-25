@@ -12,7 +12,9 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Playwright;
 using Orchestrator.Constants;
+using Orchestrator.Modules.Backlog.Contracts;
 using Orchestrator.Portal.ReadModel;
+using Orchestrator.Portal.Registry;
 
 namespace Orchestrator.Portal.BrowserTests;
 
@@ -36,6 +38,21 @@ public sealed class PortalBrowserFixture : WebApplicationFactory<Program>, IAsyn
     IPlaywright? _playwright;
 
     internal StubPanelReader Panels { get; } = new();
+
+    /// <summary>
+    /// Two stacks, overridden rather than taken from <c>stacks.yaml</c>.
+    /// <para>
+    /// The distinctions this suite exists for are comparative — "unreadable is not zero" is only observable
+    /// with one of each side by side — and the shipped registry has a single entry. Adding a fictional
+    /// client to production configuration to satisfy a test would be the wrong direction, and the registry
+    /// is an authorization artifact, so it is the last file to start putting test fixtures in.
+    /// </para>
+    /// </summary>
+    internal static StackRegistry TestRegistry { get; } =
+        new([TestStack("alpha", "Alpha Client"), TestStack("beta", "Beta Client")]);
+
+    public const string HealthyStack = "alpha";
+    public const string BrokenStack = "beta";
 
     public IBrowser Browser { get; private set; } = null!;
 
@@ -122,6 +139,7 @@ public sealed class PortalBrowserFixture : WebApplicationFactory<Program>, IAsyn
         builder.ConfigureTestServices(services =>
         {
             services.AddSingleton<IPanelReader>(Panels);
+            services.AddSingleton(TestRegistry);
 
             services
                 .AddAuthentication(SchemeName)
@@ -129,6 +147,31 @@ public sealed class PortalBrowserFixture : WebApplicationFactory<Program>, IAsyn
             services.AddSingleton(this);
         });
     }
+
+    /// <summary>Coordinates are shaped like real ones but point nowhere: nothing in this suite reaches
+    /// Azure or a vendor, because every read is intercepted at <see cref="IPanelReader"/>.</summary>
+    static RegisteredStack TestStack(string id, string displayName) =>
+        new(
+            id,
+            displayName,
+            MappingFilePath: $"{id}.mapping.yaml",
+            new StackAzureCoordinates(
+                SubscriptionId: "00000000-0000-0000-0000-000000000000",
+                ResourceGroup: $"rg-{id}",
+                QueueServiceUri: new Uri($"https://st{id}.queue.core.windows.net"),
+                QueueName: "ai-jobs",
+                JobName: $"ca-{id}-agent",
+                LogAnalyticsWorkspaceId: "00000000-0000-0000-0000-000000000000"
+            ),
+            new StackVendorCoordinates(
+                Vendor.GitHub,
+                Project: null,
+                Repo: $"example/{id}",
+                ReadCredentialSecretName: $"Portal--{id}--GitHubReadToken",
+                BaseUrl: new Uri("https://api.github.com"),
+                Deployment: null
+            )
+        );
 
     sealed class StubAuthHandler(
         IOptionsMonitor<AuthenticationSchemeOptions> options,

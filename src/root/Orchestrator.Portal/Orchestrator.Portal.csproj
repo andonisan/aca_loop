@@ -20,6 +20,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Orchestrator.Portal.UnitTests" />
     <InternalsVisibleTo Include="Orchestrator.Portal.FunctionalTests" />
+    <InternalsVisibleTo Include="Orchestrator.Portal.BrowserTests" />
   </ItemGroup>
 
   <ItemGroup>

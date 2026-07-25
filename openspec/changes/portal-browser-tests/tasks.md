@@ -10,12 +10,12 @@
 
 ## 2. Rendered distinctions (no interaction needed, highest value)
 
-- [ ] 2.1 `data-testid` on the rollup's cells and the stack view's panels — only the elements a test addresses (design D3)
-- [ ] 2.2 **Unreadable is not zero.** One stack reading zero beside one whose source fails, asserting the two are distinguishable and that the unreadable cell shows no number. This is the requirement the harness exists for: only one of those states is safe to act on and the difference lives entirely in markup
-- [ ] 2.3 A stack whose every source fails still appears as a row. Silently dropping it is the worst failure mode for a rollup, and it is invisible to every other kind of test
-- [ ] 2.4 **Degraded is not empty.** A panel whose source returned nothing beside one whose source failed, asserting each says which it is
-- [ ] 2.5 One failing source leaves the other panels rendering normally
-- [ ] 2.6 Every status badge carries a text label, not only colour — the design system's floor, asserted against what a browser actually renders rather than against the stylesheet
+- [x] 2.1 `data-testid` on the rollup's cells and the stack view's panels — only the elements a test addresses (design D3)
+- [x] 2.2 **Unreadable is not zero.** One stack reading zero beside one whose source fails, asserting the two are distinguishable and that the unreadable cell shows no number. This is the requirement the harness exists for: only one of those states is safe to act on and the difference lives entirely in markup
+- [x] 2.3 A stack whose every source fails still appears as a row. Silently dropping it is the worst failure mode for a rollup, and it is invisible to every other kind of test
+- [x] 2.4 **Degraded is not empty.** A panel whose source returned nothing beside one whose source failed, asserting each says which it is
+- [x] 2.5 One failing source leaves the other panels rendering normally
+- [x] 2.6 Every status badge carries a text label, not only colour — the design system's floor, asserted against what a browser actually renders rather than against the stylesheet
 
 ## 3. Interactions
 
