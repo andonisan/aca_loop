@@ -92,6 +92,25 @@ The queries that motivated the change are cross-cutting: which stacks dispatch a
 
 Cost: writing a mapping is a multi-row transaction rather than one upsert. Acceptable, and the transaction boundary is itself useful — a half-applied mapping is exactly the state the fail-fast contract exists to prevent.
 
+### D8 — EF Core, with migrations applied deliberately rather than on startup
+
+Chosen over raw Npgsql plus Dapper. This product has no persistence today, so the deciding factor is not
+query ergonomics — it is that migrations are the part nobody wants to hand-roll, and EF Core brings them
+with a toolchain the team already knows. The cost is a large dependency in a repo that has been careful
+about them; accepted.
+
+The trap that comes with it, and the reason this is a decision rather than a package choice: EF Core's
+documented happy path is `Database.Migrate()` at startup, and **that is exactly wrong here**. This
+database holds every client's configuration, and every receiver plus the portal starts against it. On a
+scaled deploy, several replicas would race to migrate the configuration of every client at once.
+
+The sibling `PlainConcepts.Bilbao.Burndowns` app does precisely this — `MigrateAsync()` on every startup —
+and gets away with it because it is one instance with one team's data. Neither is true here.
+
+So migrations run as an explicit deployment step or a one-shot job, never from application startup, and
+`Database.Migrate()` must not appear in any host. Task 1.5 carries this; it is repeated here because it is
+the kind of thing a later contributor "fixes" by adding the convenient call.
+
 ## Risks / Trade-offs
 
 - **The authorization surface loses its review gate** (D3). The single largest cost of this change, chosen deliberately.
