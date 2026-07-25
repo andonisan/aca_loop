@@ -1,5 +1,5 @@
-using Orchestrator.BuildingBlocks.CQS.Decorators;
 using Microsoft.Extensions.DependencyInjection;
+using Orchestrator.BuildingBlocks.CQS.Decorators;
 
 namespace Orchestrator.BuildingBlocks.CQS;
 

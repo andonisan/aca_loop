@@ -1,9 +1,9 @@
 using System.Reflection;
-using Orchestrator.BuildingBlocks.Diagnostics;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Orchestrator.BuildingBlocks.Diagnostics;
 
 namespace Orchestrator.BuildingBlocks.Modules;
 

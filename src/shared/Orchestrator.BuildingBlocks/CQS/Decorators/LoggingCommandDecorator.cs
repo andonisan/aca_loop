@@ -1,6 +1,6 @@
-using Orchestrator.BuildingBlocks.Diagnostics;
 using ErrorOr;
 using Microsoft.Extensions.Logging;
+using Orchestrator.BuildingBlocks.Diagnostics;
 
 namespace Orchestrator.BuildingBlocks.CQS.Decorators;
 

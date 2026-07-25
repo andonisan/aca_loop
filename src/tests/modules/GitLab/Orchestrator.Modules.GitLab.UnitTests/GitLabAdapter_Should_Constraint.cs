@@ -9,7 +9,10 @@ namespace Orchestrator.Modules.GitLab.UnitTests;
 
 public class GitLabAdapter_Should_Constraint
 {
-    static GitLabAdapter BuildAdapter(string webhookSecret = "shared-secret", string botUsername = "ai-loop-bot") =>
+    static GitLabAdapter BuildAdapter(
+        string webhookSecret = "shared-secret",
+        string botUsername = "ai-loop-bot"
+    ) =>
         new(
             new HttpClient(),
             Options.Create(
@@ -62,7 +65,9 @@ public class GitLabAdapter_Should_Constraint
     {
         var adapter = BuildAdapter();
 
-        adapter.VerifyWebhook(Body(LabelAddedPayload), new Dictionary<string, string>()).ShouldBeFalse();
+        adapter
+            .VerifyWebhook(Body(LabelAddedPayload), new Dictionary<string, string>())
+            .ShouldBeFalse();
     }
 
     [Fact]

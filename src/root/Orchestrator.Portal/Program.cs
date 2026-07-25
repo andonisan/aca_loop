@@ -30,7 +30,10 @@ if (!LocalDevAuthentication.TryAdd(builder))
 
 builder
     .Services.AddAuthorizationBuilder()
-    .AddPolicy(PortalPolicies.Read, policy => policy.RequireRole(PortalRoles.Reader, PortalRoles.Operator))
+    .AddPolicy(
+        PortalPolicies.Read,
+        policy => policy.RequireRole(PortalRoles.Reader, PortalRoles.Operator)
+    )
     .AddPolicy(PortalPolicies.Operate, policy => policy.RequireRole(PortalRoles.Operator))
     // The fallback requires only a signed-in user, deliberately not a role: a tenant user with no
     // portal role must reach the app far enough to be *told* which role to ask for (portal-auth

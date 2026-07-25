@@ -62,7 +62,9 @@ static class StackRegistryLoader
                 // so it is a startup failure rather than a per-request surprise.
                 if (!File.Exists(mappingPath))
                 {
-                    errors.Add($"{prefix}.mappingFile '{mappingFile}' does not exist (looked in {mappingPath})");
+                    errors.Add(
+                        $"{prefix}.mappingFile '{mappingFile}' does not exist (looked in {mappingPath})"
+                    );
                 }
             }
 
@@ -73,8 +75,16 @@ static class StackRegistryLoader
                 continue;
             }
 
-            var subscriptionId = Required(azure.SubscriptionId, $"{prefix}.azure.subscriptionId", errors);
-            var resourceGroup = Required(azure.ResourceGroup, $"{prefix}.azure.resourceGroup", errors);
+            var subscriptionId = Required(
+                azure.SubscriptionId,
+                $"{prefix}.azure.subscriptionId",
+                errors
+            );
+            var resourceGroup = Required(
+                azure.ResourceGroup,
+                $"{prefix}.azure.resourceGroup",
+                errors
+            );
             var queueName = Required(azure.QueueName, $"{prefix}.azure.queueName", errors);
             var jobName = Required(azure.JobName, $"{prefix}.azure.jobName", errors);
             var workspaceId = Required(
@@ -84,13 +94,19 @@ static class StackRegistryLoader
             );
 
             Uri? queueServiceUri = null;
-            var rawQueueUri = Required(azure.QueueServiceUri, $"{prefix}.azure.queueServiceUri", errors);
+            var rawQueueUri = Required(
+                azure.QueueServiceUri,
+                $"{prefix}.azure.queueServiceUri",
+                errors
+            );
             if (
                 rawQueueUri is not null
                 && !Uri.TryCreate(rawQueueUri, UriKind.Absolute, out queueServiceUri)
             )
             {
-                errors.Add($"{prefix}.azure.queueServiceUri '{rawQueueUri}' is not an absolute URI");
+                errors.Add(
+                    $"{prefix}.azure.queueServiceUri '{rawQueueUri}' is not an absolute URI"
+                );
             }
 
             if (

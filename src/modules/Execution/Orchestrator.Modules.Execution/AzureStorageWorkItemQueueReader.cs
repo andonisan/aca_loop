@@ -7,7 +7,10 @@ namespace Orchestrator.Modules.Execution;
 
 sealed class AzureStorageWorkItemQueueReader(QueueClient queueClient) : IWorkItemQueueReader
 {
-    static readonly JsonSerializerOptions SerializerOptions = new() { Converters = { new JsonStringEnumConverter() } };
+    static readonly JsonSerializerOptions SerializerOptions = new()
+    {
+        Converters = { new JsonStringEnumConverter() },
+    };
 
     public async Task<ReceivedWorkItem?> ReceiveAsync(
         TimeSpan visibilityTimeout,
@@ -26,9 +29,17 @@ sealed class AzureStorageWorkItemQueueReader(QueueClient queueClient) : IWorkIte
             return null;
         }
 
-        var payload = JsonSerializer.Deserialize<CanonicalMessage>(message.MessageText, SerializerOptions)!;
+        var payload = JsonSerializer.Deserialize<CanonicalMessage>(
+            message.MessageText,
+            SerializerOptions
+        )!;
 
-        return new ReceivedWorkItem(message.MessageId, message.PopReceipt, message.DequeueCount, payload);
+        return new ReceivedWorkItem(
+            message.MessageId,
+            message.PopReceipt,
+            message.DequeueCount,
+            payload
+        );
     }
 
     public Task DeleteAsync(ReceivedWorkItem item, CancellationToken cancellationToken = default) =>

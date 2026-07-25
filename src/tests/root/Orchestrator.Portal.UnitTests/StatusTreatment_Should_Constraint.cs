@@ -29,7 +29,10 @@ public class StatusTreatment_Should_Constraint
 
             badge.CssClass.ShouldNotBeNullOrWhiteSpace($"'{wireValue}' has no badge class");
             badge.Label.ShouldNotBeNullOrWhiteSpace($"'{wireValue}' has no label");
-            badge.ShouldNotBe(unknown, $"'{wireValue}' falls through to the unknown-skew treatment");
+            badge.ShouldNotBe(
+                unknown,
+                $"'{wireValue}' falls through to the unknown-skew treatment"
+            );
         }
     }
 
@@ -132,7 +135,9 @@ public class StatusTreatment_Should_Constraint
     /// configuration, so a swapped pair is a config bug and is rejected rather than normalised.</summary>
     [Fact]
     public void QueueDepth_Should_RejectInvertedThresholds() =>
-        Should.Throw<ArgumentOutOfRangeException>(() => StatusTreatment.ForQueueDepth(5, warnAt: 20, dangerAt: 10));
+        Should.Throw<ArgumentOutOfRangeException>(() =>
+            StatusTreatment.ForQueueDepth(5, warnAt: 20, dangerAt: 10)
+        );
 
     [Fact]
     public void QueueDepth_Should_RejectANegativeDepth() =>

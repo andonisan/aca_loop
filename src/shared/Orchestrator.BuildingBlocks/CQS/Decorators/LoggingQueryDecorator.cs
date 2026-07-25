@@ -1,6 +1,6 @@
-using Orchestrator.BuildingBlocks.Diagnostics;
 using ErrorOr;
 using Microsoft.Extensions.Logging;
+using Orchestrator.BuildingBlocks.Diagnostics;
 
 namespace Orchestrator.BuildingBlocks.CQS.Decorators;
 
@@ -10,10 +10,7 @@ sealed class LoggingQueryDecorator<TQuery, TResponse>(
 ) : IAppQueryHandler<TQuery, TResponse>
     where TQuery : IQuery<TResponse>
 {
-    public async Task<TResponse> Handle(
-        TQuery query,
-        CancellationToken cancellationToken = default
-    )
+    public async Task<TResponse> Handle(TQuery query, CancellationToken cancellationToken = default)
     {
         var requestName = typeof(TQuery).Name;
         CqsLog.HandlingRequest(logger, requestName);

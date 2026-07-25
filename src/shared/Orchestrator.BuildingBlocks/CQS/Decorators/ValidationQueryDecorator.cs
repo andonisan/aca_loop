@@ -9,10 +9,7 @@ sealed class ValidationQueryDecorator<TQuery, TResponse>(
 ) : IAppQueryHandler<TQuery, TResponse>
     where TQuery : IQuery<TResponse>
 {
-    public async Task<TResponse> Handle(
-        TQuery query,
-        CancellationToken cancellationToken = default
-    )
+    public async Task<TResponse> Handle(TQuery query, CancellationToken cancellationToken = default)
     {
         var validatorList = validators as IValidator<TQuery>[] ?? [.. validators];
         if (validatorList.Length == 0)

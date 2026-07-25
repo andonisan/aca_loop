@@ -54,11 +54,16 @@ static class StatusTreatment
             // schema skew, and it says so rather than picking a colour and moving on.
             RunOutcome.Unknown => new("orange", "unknown outcome"),
 
-            _ => throw new ArgumentOutOfRangeException(nameof(outcome), outcome, "Unmapped run outcome."),
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(outcome),
+                outcome,
+                "Unmapped run outcome."
+            ),
         };
 
     /// <summary>Treatment for a wire outcome string, parsing it first.</summary>
-    internal static StatusBadge ForOutcome(string? wireValue) => ForOutcome(RunOutcomeParser.Parse(wireValue));
+    internal static StatusBadge ForOutcome(string? wireValue) =>
+        ForOutcome(RunOutcomeParser.Parse(wireValue));
 
     /// <summary>
     /// Treatment for an ACA job execution's state. <c>Running</c> is <c>info</c> rather than a success or
@@ -78,7 +83,11 @@ static class StatusTreatment
 
             PodExecutionState.Unknown => new("orange", "unknown state"),
 
-            _ => throw new ArgumentOutOfRangeException(nameof(state), state, "Unmapped execution state."),
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(state),
+                state,
+                "Unmapped execution state."
+            ),
         };
 
     /// <summary>

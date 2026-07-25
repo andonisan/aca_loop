@@ -64,7 +64,10 @@ sealed class PortalTestFactory : WebApplicationFactory<Program>
             // an unauthenticated request produces a plain 401 instead of reaching out to Entra.
             services
                 .AddAuthentication(SchemeName)
-                .AddScheme<AuthenticationSchemeOptions, StubAuthenticationHandler>(SchemeName, _ => { });
+                .AddScheme<AuthenticationSchemeOptions, StubAuthenticationHandler>(
+                    SchemeName,
+                    _ => { }
+                );
         });
     }
 

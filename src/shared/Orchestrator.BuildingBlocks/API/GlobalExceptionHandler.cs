@@ -1,8 +1,8 @@
-using Orchestrator.BuildingBlocks.Diagnostics;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Orchestrator.BuildingBlocks.Diagnostics;
 
 namespace Orchestrator.BuildingBlocks.API;
 

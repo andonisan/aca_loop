@@ -81,7 +81,9 @@ public class AzureDevOpsAdapter_Should_Constraint
     {
         var adapter = BuildAdapter();
 
-        adapter.VerifyWebhook(Body(StateChangedPayload), new Dictionary<string, string>()).ShouldBeFalse();
+        adapter
+            .VerifyWebhook(Body(StateChangedPayload), new Dictionary<string, string>())
+            .ShouldBeFalse();
     }
 
     [Fact]
@@ -89,7 +91,10 @@ public class AzureDevOpsAdapter_Should_Constraint
     {
         var adapter = BuildAdapter();
 
-        var canonicalEvent = adapter.ParseEvent(Body(StateChangedPayload), new Dictionary<string, string>());
+        var canonicalEvent = adapter.ParseEvent(
+            Body(StateChangedPayload),
+            new Dictionary<string, string>()
+        );
 
         canonicalEvent.ShouldNotBeNull();
         canonicalEvent.Vendor.ShouldBe(Vendor.AzureDevOps);

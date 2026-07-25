@@ -1,6 +1,6 @@
 using System.Reflection;
-using Orchestrator.BuildingBlocks.CQS;
 using Microsoft.Extensions.Logging;
+using Orchestrator.BuildingBlocks.CQS;
 using Shouldly;
 
 namespace Orchestrator.ArchTests;

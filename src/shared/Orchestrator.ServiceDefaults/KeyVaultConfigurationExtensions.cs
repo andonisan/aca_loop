@@ -20,7 +20,10 @@ public static class KeyVaultConfigurationExtensions
         var keyVaultUri = builder.Configuration["KEY_VAULT_URI"];
         if (!string.IsNullOrWhiteSpace(keyVaultUri))
         {
-            builder.Configuration.AddAzureKeyVault(new Uri(keyVaultUri), new DefaultAzureCredential());
+            builder.Configuration.AddAzureKeyVault(
+                new Uri(keyVaultUri),
+                new DefaultAzureCredential()
+            );
         }
 
         return builder;
