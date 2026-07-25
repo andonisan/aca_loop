@@ -13,6 +13,9 @@
     <ProjectReference Include="..\..\..\shared\Orchestrator.Constants\Orchestrator.Constants.csproj" />
     <ProjectReference Include="..\..\Backlog\Orchestrator.Modules.Backlog.Contracts\Orchestrator.Modules.Backlog.Contracts.csproj" />
     <ProjectReference Include="..\Orchestrator.Modules.ConfigStore.Contracts\Orchestrator.Modules.ConfigStore.Contracts.csproj" />
+    <!-- For MappingLoader.Validate: rows and files are two sources for one validated contract, and the
+         validator must be shared rather than reimplemented here (design D5). -->
+    <ProjectReference Include="..\..\Dispatch\Orchestrator.Modules.Dispatch.Contracts\Orchestrator.Modules.Dispatch.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>

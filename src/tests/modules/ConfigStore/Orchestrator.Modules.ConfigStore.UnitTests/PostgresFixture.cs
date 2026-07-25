@@ -20,9 +20,7 @@ namespace Orchestrator.Modules.ConfigStore.UnitTests;
 /// </summary>
 public sealed class PostgresFixture : IAsyncLifetime
 {
-    readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder(
-        "postgres:18-alpine"
-    ).Build();
+    readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:18-alpine").Build();
 
     public string ConnectionString => _postgres.GetConnectionString();
 

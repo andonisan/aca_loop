@@ -30,8 +30,20 @@ public static class MappingLoader
             .IgnoreUnmatchedProperties()
             .Build();
 
-        var file = deserializer.Deserialize<MappingFile>(yaml) ?? new MappingFile();
+        return Validate(deserializer.Deserialize<MappingFile>(yaml) ?? new MappingFile());
+    }
 
+    /// <summary>
+    /// Validation, over the raw shape rather than over YAML.
+    /// <para>
+    /// Split out from <see cref="Parse"/> because a mapping no longer arrives only as a file: the config
+    /// store holds the same shape as rows, and <c>postgres-config-store</c> design D5 requires that both
+    /// sources run <i>this</i> validator rather than each carrying its own. A second copy would drift on
+    /// exactly the rules that matter — which states dispatch, and which vendor they dispatch against.
+    /// </para>
+    /// </summary>
+    public static MappingConfig Validate(MappingFile file)
+    {
         var errors = new List<string>();
         var targets = new List<TargetMapping>();
 

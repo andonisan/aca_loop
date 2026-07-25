@@ -20,5 +20,4 @@ public sealed class ConfigStoreModule : WorkerModuleBase
     /// composing one wire this identically.</summary>
     public override void Add(IServiceCollection services, IConfiguration configuration) =>
         services.AddConfigStore(configuration);
-
 }
