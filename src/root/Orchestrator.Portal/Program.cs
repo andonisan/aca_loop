@@ -5,6 +5,7 @@ using Microsoft.Identity.Web.UI;
 using Orchestrator.Constants;
 using Orchestrator.Portal.Components;
 using Orchestrator.Portal.LocalDev;
+using Orchestrator.Portal.ReadModel;
 using Orchestrator.Portal.Registry;
 using Orchestrator.ServiceDefaults;
 
@@ -14,6 +15,8 @@ builder.AddServiceDefaults();
 
 // Eager, before Build(): an invalid registry must stop the process, not surface per request.
 builder.Services.AddStackRegistry(builder.Configuration);
+
+builder.Services.AddReadModel(builder.Configuration);
 
 // Entra ID sign-in against a single internal app registration. Nothing but the health probes is
 // reachable unauthenticated, enforced by a fallback policy rather than per-page attributes so a new
