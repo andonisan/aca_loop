@@ -51,6 +51,9 @@ sealed class PortalTestFactory : WebApplicationFactory<Program>
             )
         );
 
+        // Capture server-side errors so an unexpected 500 reports its cause rather than just its status.
+        builder.ConfigureLogging(logging => logging.AddProvider(new ServerErrorCaptureProvider()));
+
         builder.ConfigureTestServices(services =>
         {
             if (!OverrideAuthentication)
