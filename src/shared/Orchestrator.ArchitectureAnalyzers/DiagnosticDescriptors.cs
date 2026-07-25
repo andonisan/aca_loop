@@ -28,6 +28,30 @@ public static class DiagnosticDescriptors
             + "implementation assembly."
     );
 
+    public static readonly DiagnosticDescriptor Mod003PublicDomainEntity = new(
+        id: "MOD003",
+        title: "Persistence entities must be internal within a module",
+        messageFormat: "'{0}' is a persistence entity and must be internal to its module",
+        category: ModuleBoundaryCategory,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true,
+        description: "A module's entities are its private storage shape, not its contract. Making one "
+            + "public lets another module bind to a schema it does not own, which is what turns a "
+            + "migration into a cross-module breaking change. Consumers get a DTO from .Contracts."
+    );
+
+    public static readonly DiagnosticDescriptor Mod005EntityLeak = new(
+        id: "MOD005",
+        title: "Persistence entities must not appear in a module's public signatures",
+        messageFormat: "'{0}' exposes persistence entity '{1}' — return a contract type instead",
+        category: ModuleBoundaryCategory,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true,
+        description: "Keeping entities internal is not enough on its own: a public member that returns "
+            + "or accepts one still leaks the storage shape to callers. MOD003 covers the type, this "
+            + "covers the signatures that would carry it out."
+    );
+
     public static readonly DiagnosticDescriptor Mod004ControllerInModule = new(
         id: "MOD004",
         title: "ASP.NET MVC controllers must not exist inside module projects",
