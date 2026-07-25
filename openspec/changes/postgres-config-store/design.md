@@ -92,24 +92,33 @@ The queries that motivated the change are cross-cutting: which stacks dispatch a
 
 Cost: writing a mapping is a multi-row transaction rather than one upsert. Acceptable, and the transaction boundary is itself useful — a half-applied mapping is exactly the state the fail-fast contract exists to prevent.
 
-### D8 — EF Core, with migrations applied deliberately rather than on startup
+### D8 — EF Core, and the portal is the single schema owner that migrates
 
-Chosen over raw Npgsql plus Dapper. This product has no persistence today, so the deciding factor is not
-query ergonomics — it is that migrations are the part nobody wants to hand-roll, and EF Core brings them
-with a toolchain the team already knows. The cost is a large dependency in a repo that has been careful
-about them; accepted.
+EF Core with `Npgsql.EntityFrameworkCore.PostgreSQL`, mirroring ds-connect's stack exactly (`Microsoft.EntityFrameworkCore` 10.0.9, `Npgsql.EntityFrameworkCore.PostgreSQL` 10.0.2).
 
-The trap that comes with it, and the reason this is a decision rather than a package choice: EF Core's
-documented happy path is `Database.Migrate()` at startup, and **that is exactly wrong here**. This
-database holds every client's configuration, and every receiver plus the portal starts against it. On a
-scaled deploy, several replicas would race to migrate the configuration of every client at once.
+**This decision was rewritten.** The first version said migrations must never run at application startup, reasoning that hundreds of receivers plus the portal all start against this database and would race. That was half right, and the half that was wrong matters.
 
-The sibling `PlainConcepts.Bilbao.Burndowns` app does precisely this — `MigrateAsync()` on every startup —
-and gets away with it because it is one instance with one team's data. Neither is true here.
+ds-connect applies migrations at startup — every module does `await dbContext.Database.MigrateAsync()` in its `InitializeAsync`, driven from `app.InitializeAppModulesAsync()` before `app.Run()`, recorded in an archived ADR. No runner, no job, no CLI step. It works there because ds-connect is **one server** owning every module and every schema: exactly one process ever migrates.
 
-So migrations run as an explicit deployment step or a one-shot job, never from application startup, and
-`Database.Migrate()` must not appear in any host. Task 1.5 carries this; it is repeated here because it is
-the kind of thing a later contributor "fixes" by adding the convenient call.
+That is the actual rule, and it is about ownership rather than timing: **the component that owns a schema migrates it, and there must be exactly one of it.**
+
+Applied here: the **portal** owns the `configstore` schema and migrates at startup, following ds-connect's convention verbatim. There is one portal. **Receivers never migrate** — they are readers of a schema they do not own, and hundreds of them calling `MigrateAsync` would be the race the first version of this decision feared. A reader that finds a schema older than it expects fails fast rather than fixing it, which is the correct behaviour for something that does not own the thing.
+
+So the guard that matters is not "no migration at startup" but "no `Database.Migrate()` in any host except the portal". That is narrower, matches the house convention, and is enforceable by inspection.
+
+The Burndowns note from the first draft still stands as a caution, but for a different reason than I first gave: it migrates on startup *and* is a single instance, so it is an example of this rule being satisfied by accident rather than a counter-example.
+
+### D9 — The config store is a module with its own schema, following ds-connect's persistence conventions
+
+This product's `design.md` D7 (in `agentic-backlog-orchestrator`) already commits to mirroring ds-connect's organization. It has had no persistence until now, so the persistence half of those conventions has never been exercised. Adopted wholesale rather than reinvented:
+
+- **One Postgres schema per module.** `configstore`, declared three ways in concert the way ds-connect does it: `modelBuilder.HasDefaultSchema("configstore")` in `OnModelCreating`, `npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "configstore")` at registration, and `EnsureSchema` in the first migration. All modules share one physical database; isolation is by schema, and there are no cross-schema queries.
+- **`DbContext` is `internal sealed`**, never public, never referenced by a host. That is what makes "no repository pattern" safe there: another module physically cannot reach it. Test access via `InternalsVisibleTo`.
+- **No repository pattern, no `IUnitOfWork`.** Handlers take the `DbContext` directly. ds-connect has none and neither will this.
+- **Entity configuration** as `IEntityTypeConfiguration<T>` classes picked up by `ApplyConfigurationsFromAssembly`, with `ToTable("snake_case")`, lengths from a shared constants type, and enums stored as strings via `HasConversion<string>()`.
+- **Connection by `IConfiguration.GetConnectionString(...)`**, constructing the client inside the module's own `Add(...)` — not an Aspire client integration. ds-connect documents the mechanical reason: `IModule.Add` receives only `IServiceCollection`/`IConfiguration`, so builder-based Aspire client extensions are structurally unavailable to a module.
+
+One consequence worth flagging rather than burying: **this repo skipped MOD003 and MOD005 when porting ds-connect's analyzers**, with the recorded note that they "key off EF `Aggregate`/`BaseEntity`, which don't exist in this stateless product". They are about to exist. MOD003 (domain entities must be `internal`) and MOD005 (entities must never appear in a public signature) are precisely the rules that keep a config schema from leaking across module boundaries, so porting them becomes part of this change rather than a nice-to-have.
 
 ## Risks / Trade-offs
 
