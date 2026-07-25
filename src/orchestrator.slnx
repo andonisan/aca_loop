@@ -55,6 +55,9 @@
   <Folder Name="/tests/modules/GitLab/">
     <Project Path="tests/modules/GitLab/Orchestrator.Modules.GitLab.UnitTests/Orchestrator.Modules.GitLab.UnitTests.csproj" />
   </Folder>
+  <Folder Name="/tests/modules/GitHub/">
+    <Project Path="tests/modules/GitHub/Orchestrator.Modules.GitHub.UnitTests/Orchestrator.Modules.GitHub.UnitTests.csproj" />
+  </Folder>
   <Folder Name="/tests/modules/Jira/">
     <Project Path="tests/modules/Jira/Orchestrator.Modules.Jira.UnitTests/Orchestrator.Modules.Jira.UnitTests.csproj" />
   </Folder>

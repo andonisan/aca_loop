@@ -22,9 +22,11 @@
     <ProjectReference Include="..\..\shared\Orchestrator.BuildingBlocks\Orchestrator.BuildingBlocks.csproj" />
     <ProjectReference Include="..\..\shared\Orchestrator.Constants\Orchestrator.Constants.csproj" />
     <ProjectReference Include="..\..\shared\Orchestrator.ServiceDefaults\Orchestrator.ServiceDefaults.csproj" />
-    <!-- Contracts only. The Portal reads vendors through IBacklogReader and must never reference a
-         vendor module's implementation, which is also what MOD002 enforces. -->
+    <!-- Contracts for the shared model; vendor modules for the IBacklogReader implementations the
+         Portal composes. Referencing module implementations from a host is what Receiver and Agent do
+         too — MOD002 constrains modules referencing each other, not hosts composing them. -->
     <ProjectReference Include="..\..\modules\Backlog\Orchestrator.Modules.Backlog.Contracts\Orchestrator.Modules.Backlog.Contracts.csproj" />
+    <ProjectReference Include="..\..\modules\GitHub\Orchestrator.Modules.GitHub\Orchestrator.Modules.GitHub.csproj" />
   </ItemGroup>
 
   <ItemGroup>
