@@ -50,6 +50,9 @@
   <Folder Name="/tests/">
     <Project Path="tests/Orchestrator.ArchTests/Orchestrator.ArchTests.csproj" />
   </Folder>
+  <Folder Name="/tests/modules/ConfigStore/">
+    <Project Path="tests/modules/ConfigStore/Orchestrator.Modules.ConfigStore.UnitTests/Orchestrator.Modules.ConfigStore.UnitTests.csproj" />
+  </Folder>
   <Folder Name="/tests/modules/Dispatch/">
     <Project Path="tests/modules/Dispatch/Orchestrator.Modules.Dispatch.UnitTests/Orchestrator.Modules.Dispatch.UnitTests.csproj" />
   </Folder>

@@ -1,10 +1,6 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Orchestrator.BuildingBlocks.Modules;
-using Orchestrator.Constants;
-using Orchestrator.Modules.ConfigStore.Contracts;
-using Orchestrator.Modules.ConfigStore.Infrastructure.Persistence;
 
 namespace Orchestrator.Modules.ConfigStore;
 
@@ -20,23 +16,9 @@ namespace Orchestrator.Modules.ConfigStore;
 /// </summary>
 public sealed class ConfigStoreModule : WorkerModuleBase
 {
-    public override void Add(IServiceCollection services, IConfiguration configuration)
-    {
-        var connectionString = configuration.GetConnectionString(Components.Database);
+    /// <summary>Delegates to the shared registration so a module-discovering host and an explicitly
+    /// composing one wire this identically.</summary>
+    public override void Add(IServiceCollection services, IConfiguration configuration) =>
+        services.AddConfigStore(configuration);
 
-        services.AddDbContext<ConfigStoreDbContext>(options =>
-            options.UseNpgsql(
-                connectionString,
-                // The history table lives in this module's schema too, so two modules' migrations never
-                // share a ledger.
-                npgsql =>
-                    npgsql.MigrationsHistoryTable(
-                        "__EFMigrationsHistory",
-                        ConfigStoreDbContext.Schema
-                    )
-            )
-        );
-
-        services.AddScoped<IConfigStore, PostgresConfigStore>();
-    }
 }

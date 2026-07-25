@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Identity.Web;
 using Microsoft.Identity.Web.UI;
 using Orchestrator.Constants;
+using Orchestrator.Modules.ConfigStore;
 using Orchestrator.Portal.Components;
 using Orchestrator.Portal.LocalDev;
 using Orchestrator.Portal.ReadModel;
@@ -15,6 +16,10 @@ builder.AddServiceDefaults();
 
 // Eager, before Build(): an invalid registry must stop the process, not surface per request.
 builder.Services.AddStackRegistry(builder.Configuration);
+
+// Explicitly, not via RegisterAppModules: the portal references the vendor modules for their read-only
+// clients but must not register their adapters, whose options it does not configure.
+builder.Services.AddConfigStore(builder.Configuration);
 
 builder.Services.AddReadModel(builder.Configuration);
 

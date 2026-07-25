@@ -73,6 +73,14 @@ dotnet_diagnostic.MOD002.severity = error
 dotnet_diagnostic.MOD004.severity = error
 dotnet_diagnostic.CQS001.severity = error
 
+# EF Core scaffolds migrations with block-scoped namespaces and does not mark its output as generated;
+# tell the tooling ourselves rather than hand-editing style on every scaffold run. Same treatment
+# ds-connect gives them.
+[**/Migrations/*.cs]
+generated_code = true
+csharp_style_namespace_declarations = block_scoped:silent
+dotnet_diagnostic.IDE0161.severity = silent
+
 [*.{csproj,props,targets}]
 indent_size = 2
 

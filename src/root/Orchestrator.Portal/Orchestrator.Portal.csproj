@@ -11,6 +11,10 @@
     <PackageReference Include="Microsoft.Identity.Web" />
     <PackageReference Include="Microsoft.Identity.Web.UI" />
     <PackageReference Include="YamlDotNet" />
+    <!-- Lets `dotnet ef migrations add` run against the ConfigStore DbContext from this startup project.
+         The portal owns that schema, so it is the startup project for authoring its migrations. Design
+         assets never ship. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
@@ -31,6 +35,7 @@
     <ProjectReference Include="..\..\modules\AzureDevOps\Orchestrator.Modules.AzureDevOps\Orchestrator.Modules.AzureDevOps.csproj" />
     <ProjectReference Include="..\..\modules\Jira\Orchestrator.Modules.Jira\Orchestrator.Modules.Jira.csproj" />
     <ProjectReference Include="..\..\modules\Dispatch\Orchestrator.Modules.Dispatch.Contracts\Orchestrator.Modules.Dispatch.Contracts.csproj" />
+    <ProjectReference Include="..\..\modules\ConfigStore\Orchestrator.Modules.ConfigStore\Orchestrator.Modules.ConfigStore.csproj" />
   </ItemGroup>
 
   <ItemGroup>
