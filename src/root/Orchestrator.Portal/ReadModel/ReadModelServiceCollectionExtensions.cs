@@ -29,6 +29,9 @@ public static class ReadModelServiceCollectionExtensions
         services.AddSingleton<TokenCredential>(new DefaultAzureCredential());
         services.AddSingleton<IPanelReader, CachedPanelReader>();
 
+        services.AddSingleton(sp =>
+            StackQueueClient.ForCredential(sp.GetRequiredService<TokenCredential>())
+        );
         services.AddSingleton<QueueDepthSource>();
         services.AddSingleton<PodExecutionsSource>();
 
