@@ -53,4 +53,24 @@ public interface IBacklogReader
         IReadOnlyCollection<string> states,
         CancellationToken cancellationToken = default
     );
+
+    /// <summary>
+    /// One item's current state, read live.
+    /// <para>
+    /// The same question <c>IBacklogAdapter.ReadItemStateAsync</c> answers, deliberately duplicated onto
+    /// the read-only contract rather than shared. A consumer that must not write needs this read, and
+    /// giving it the adapter to get it would hand it the transition and comment methods too — which is
+    /// exactly what the two contracts exist to prevent (orchestrator-portal design D9).
+    /// </para>
+    /// <para>
+    /// Returns empty when the item carries no state the vendor exposes as one, matching the adapter's
+    /// behaviour so both sides of a gate comparison mean the same thing.
+    /// </para>
+    /// </summary>
+    Task<string> ReadItemStateAsync(
+        string? project,
+        string repo,
+        string itemId,
+        CancellationToken cancellationToken = default
+    );
 }

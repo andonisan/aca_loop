@@ -14,6 +14,7 @@ namespace Orchestrator.Modules.GitLab;
 public sealed class GitLabBacklogReader(HttpClient httpClient) : IBacklogReader
 {
     const int PerPage = 100;
+    const string StatusLabelPrefix = "status:";
 
     public required Func<string, CancellationToken, Task<string>> ReadTokenFor { get; init; }
 
@@ -54,6 +55,30 @@ public sealed class GitLabBacklogReader(HttpClient httpClient) : IBacklogReader
         }
 
         return [.. items.Values.OrderByDescending(i => i.UpdatedAt ?? DateTimeOffset.MinValue)];
+    }
+
+    public async Task<string> ReadItemStateAsync(
+        string? project,
+        string repo,
+        string itemId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var token = await ReadTokenFor(repo, cancellationToken);
+        using var document = await GetAsync(
+            token,
+            $"/projects/{Uri.EscapeDataString(repo)}/issues/{itemId}",
+            cancellationToken
+        );
+
+        return document
+                .RootElement.GetProperty("labels")
+                .EnumerateArray()
+                .Select(l => l.GetString())
+                .FirstOrDefault(n =>
+                    n is not null && n.StartsWith(StatusLabelPrefix, StringComparison.Ordinal)
+                )
+            ?? string.Empty;
     }
 
     /// <summary>The <c>iid</c>, not the <c>id</c>: the project-scoped number is what the UI shows, what a

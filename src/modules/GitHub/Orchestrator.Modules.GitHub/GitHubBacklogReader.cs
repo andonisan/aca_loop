@@ -15,6 +15,7 @@ namespace Orchestrator.Modules.GitHub;
 public sealed class GitHubBacklogReader(HttpClient httpClient) : IBacklogReader
 {
     const string ApiVersion = "2022-11-28";
+    const string StatusLabelPrefix = "status:";
 
     /// <summary>GitHub caps a page at 100. Gate states hold work in flight, so a target with more than
     /// this in one state has a problem the portal should surface rather than paginate around.</summary>
@@ -70,6 +71,31 @@ public sealed class GitHubBacklogReader(HttpClient httpClient) : IBacklogReader
         }
 
         return [.. items.Values.OrderByDescending(i => i.UpdatedAt ?? DateTimeOffset.MinValue)];
+    }
+
+    public async Task<string> ReadItemStateAsync(
+        string? project,
+        string repo,
+        string itemId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var token = await ReadTokenFor(repo, cancellationToken);
+        using var document = await GetAsync(
+            token,
+            $"/repos/{repo}/issues/{itemId}",
+            cancellationToken
+        );
+
+        // The lifecycle label, by the same status: prefix convention the adapter writes with.
+        return document
+                .RootElement.GetProperty("labels")
+                .EnumerateArray()
+                .Select(l => l.GetProperty("name").GetString())
+                .FirstOrDefault(n =>
+                    n is not null && n.StartsWith(StatusLabelPrefix, StringComparison.Ordinal)
+                )
+            ?? string.Empty;
     }
 
     static BacklogItem ToItem(JsonElement issue, string state) =>

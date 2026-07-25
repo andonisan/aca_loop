@@ -36,6 +36,7 @@ public static class ReadModelServiceCollectionExtensions
         services.AddSingleton<IReadCredentialResolver, ReadCredentialResolver>();
         services.AddSingleton<BacklogReaderFactory>();
         services.AddSingleton<GatedItemsSource>();
+        services.AddSingleton<Operations.ManualDispatch>();
 
         services.AddSingleton<QueueDepthSource>();
         services.AddSingleton<PodExecutionsSource>();

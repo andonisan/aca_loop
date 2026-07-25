@@ -74,6 +74,29 @@ public sealed class JiraBacklogReader(HttpClient httpClient, IOptions<JiraOption
         return [.. issues.EnumerateArray().Select(ToItem)];
     }
 
+    public async Task<string> ReadItemStateAsync(
+        string? project,
+        string repo,
+        string itemId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var token = await ReadTokenFor(project ?? "", cancellationToken);
+
+        using var document = await GetAsync(
+            token,
+            $"/rest/api/{_options.ApiVersion}/issue/{itemId}?fields=status",
+            cancellationToken
+        );
+
+        return
+            document.RootElement.TryGetProperty("fields", out var fields)
+            && fields.TryGetProperty("status", out var status)
+            && status.TryGetProperty("name", out var name)
+            ? name.GetString() ?? string.Empty
+            : string.Empty;
+    }
+
     /// <summary>Keyed by issue key, matching what the adapter uses as <c>ItemId</c> and what a human
     /// quotes — never the numeric id.</summary>
     BacklogItem ToItem(JsonElement issue)

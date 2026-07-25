@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Azure.Storage.Queues;
 using Orchestrator.Modules.Backlog.Contracts;
 using Orchestrator.Modules.Dispatch.Contracts;
@@ -7,17 +6,10 @@ namespace Orchestrator.Modules.Dispatch;
 
 sealed class AzureStorageWorkItemQueue(QueueClient queueClient) : IWorkItemQueue
 {
-    static readonly JsonSerializerOptions SerializerOptions = new()
-    {
-        Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() },
-    };
-
+    // Serialization lives in Dispatch.Contracts: the portal's manual-dispatch verb is a second writer to
+    // this queue, and two copies of the wire format would eventually disagree.
     public async Task EnqueueAsync(
         CanonicalMessage message,
         CancellationToken cancellationToken = default
-    )
-    {
-        var body = JsonSerializer.Serialize(message, SerializerOptions);
-        await queueClient.SendMessageAsync(body, cancellationToken);
-    }
+    ) => await queueClient.SendMessageAsync(QueueMessage.Serialize(message), cancellationToken);
 }

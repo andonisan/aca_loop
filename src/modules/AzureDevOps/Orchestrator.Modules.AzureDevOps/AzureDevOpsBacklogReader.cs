@@ -61,6 +61,30 @@ public sealed class AzureDevOpsBacklogReader(HttpClient httpClient) : IBacklogRe
         return [.. items.OrderByDescending(i => i.UpdatedAt ?? DateTimeOffset.MinValue)];
     }
 
+    public async Task<string> ReadItemStateAsync(
+        string? project,
+        string repo,
+        string itemId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var projectName = string.IsNullOrWhiteSpace(project) ? repo : project;
+        var token = await ReadTokenFor(projectName, cancellationToken);
+
+        using var document = await SendAsync(
+            token,
+            HttpMethod.Get,
+            $"/{Uri.EscapeDataString(projectName)}/_apis/wit/workitems/{itemId}"
+                + $"?fields=System.State&api-version={ApiVersion}",
+            body: null,
+            cancellationToken
+        );
+
+        return document.RootElement.TryGetProperty("fields", out var fields)
+            ? Text(fields, "System.State")
+            : string.Empty;
+    }
+
     /// <summary>WIQL returns ids only — the fields come from a second, batched call. Two round trips for
     /// any number of states, rather than one per state.</summary>
     async Task<IReadOnlyList<long>> QueryIdsAsync(
@@ -173,13 +197,14 @@ public sealed class AzureDevOpsBacklogReader(HttpClient httpClient) : IBacklogRe
         string token,
         HttpMethod method,
         string path,
-        object body,
+        object? body,
         CancellationToken cancellationToken
     )
     {
         using var request = new HttpRequestMessage(method, path)
         {
-            Content = JsonContent.Create(body),
+            // Null for the GET single-item read; the batch and WIQL calls both post a body.
+            Content = body is null ? null : JsonContent.Create(body),
         };
         request.Headers.Authorization = new AuthenticationHeaderValue(
             "Basic",
