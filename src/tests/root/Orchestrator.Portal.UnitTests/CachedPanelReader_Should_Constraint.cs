@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Time.Testing;
+using Orchestrator.Modules.Backlog.Contracts;
 using Orchestrator.Portal.ReadModel;
 using Orchestrator.Portal.Registry;
 using Shouldly;
@@ -24,6 +25,12 @@ public class CachedPanelReader_Should_Constraint
             "ai-jobs",
             "agent-job",
             "11111111-1111-1111-1111-111111111111"
+        ),
+        new StackVendorCoordinates(
+            Vendor.GitHub,
+            Project: null,
+            Repo: "acme/widgets",
+            ReadCredentialSecretName: "Portal--dsconnect-dev--GitHubReadToken"
         )
     );
 

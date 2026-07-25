@@ -21,6 +21,9 @@
     <ProjectReference Include="..\..\shared\Orchestrator.BuildingBlocks\Orchestrator.BuildingBlocks.csproj" />
     <ProjectReference Include="..\..\shared\Orchestrator.Constants\Orchestrator.Constants.csproj" />
     <ProjectReference Include="..\..\shared\Orchestrator.ServiceDefaults\Orchestrator.ServiceDefaults.csproj" />
+    <!-- Contracts only. The Portal reads vendors through IBacklogReader and must never reference a
+         vendor module's implementation, which is also what MOD002 enforces. -->
+    <ProjectReference Include="..\..\modules\Backlog\Orchestrator.Modules.Backlog.Contracts\Orchestrator.Modules.Backlog.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>

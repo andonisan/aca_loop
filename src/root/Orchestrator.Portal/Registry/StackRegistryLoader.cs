@@ -1,3 +1,4 @@
+using Orchestrator.Modules.Backlog.Contracts;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -109,6 +110,40 @@ static class StackRegistryLoader
                 );
             }
 
+            // Vendor coordinates are required, not optional: every read the portal does against a tracker
+            // needs them, and a stack that cannot be read is not a stack this portal can show (design D9).
+            var rawVendor = raw.Vendor;
+            if (rawVendor is null)
+            {
+                errors.Add($"{prefix}.vendor is required");
+                continue;
+            }
+
+            Vendor vendor = default;
+            var vendorName = Required(rawVendor.Name, $"{prefix}.vendor.name", errors);
+            if (vendorName is not null && !Enum.TryParse(vendorName, ignoreCase: true, out vendor))
+            {
+                errors.Add($"{prefix}.vendor.name '{vendorName}' is not a known vendor");
+                vendorName = null;
+            }
+
+            var readSecret = Required(
+                rawVendor.ReadCredentialSecretName,
+                $"{prefix}.vendor.readCredentialSecretName",
+                errors
+            );
+
+            // Same rule the mapping loader applies to a target: at least one coordinate must identify the
+            // items, since a non-repo-anchored tracker (a Jira project) has no repo of its own.
+            if (
+                string.IsNullOrWhiteSpace(rawVendor.Repo)
+                && string.IsNullOrWhiteSpace(rawVendor.Project)
+            )
+            {
+                errors.Add($"{prefix}.vendor must declare at least one of repo/project");
+                readSecret = null;
+            }
+
             if (
                 id is null
                 || mappingPath is null
@@ -118,6 +153,8 @@ static class StackRegistryLoader
                 || queueName is null
                 || jobName is null
                 || workspaceId is null
+                || vendorName is null
+                || readSecret is null
             )
             {
                 continue;
@@ -135,6 +172,12 @@ static class StackRegistryLoader
                         queueName,
                         jobName,
                         workspaceId
+                    ),
+                    new StackVendorCoordinates(
+                        vendor,
+                        rawVendor.Project,
+                        rawVendor.Repo ?? string.Empty,
+                        readSecret
                     )
                 )
             );

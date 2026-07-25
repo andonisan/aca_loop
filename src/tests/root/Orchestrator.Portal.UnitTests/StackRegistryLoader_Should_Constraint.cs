@@ -31,6 +31,10 @@ public sealed class StackRegistryLoader_Should_Constraint : IDisposable
               queueName: ai-jobs
               jobName: ca-dsconnect-dev-agent
               logAnalyticsWorkspaceId: "workspace-1"
+            vendor:
+              name: GitHub
+              repo: acme/widgets
+              readCredentialSecretName: Portal--s--Read
         """;
 
     StackRegistry Parse(string yaml) => StackRegistryLoader.Parse(yaml, directory);
@@ -124,6 +128,10 @@ public sealed class StackRegistryLoader_Should_Constraint : IDisposable
                   queueName: ai-jobs
                   jobName: ca-other-agent
                   logAnalyticsWorkspaceId: "workspace-2"
+                vendor:
+                  name: GitHub
+                  repo: acme/widgets
+                  readCredentialSecretName: Portal--s--Read
             """
         );
 

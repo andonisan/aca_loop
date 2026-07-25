@@ -68,6 +68,25 @@ D1 says the portal "reuses Dispatch's mapping model for resolution", which the m
 - [Blazor Server single replica = brief downtime on deploy] → accepted for an internal tool; loops are unaffected by portal downtime by construction (D7).
 - [Read-scoped vendor tokens are still long-lived for GitLab/ADO] → same asymmetry already accepted in the orchestrator design (D6 there); shortest expiry + the same rotation runbook, one more entry per stack.
 
+### D9 — Vendor reads go through a separate read-only contract, not the write-capable adapter (found during 3.x)
+
+Task 3.3 says to list gated items "via the existing vendor adapter modules". They cannot, for two independent reasons, and the second is the one that matters.
+
+**They cannot answer the question.** `IBacklogAdapter` exposes `ReadItemStateAsync(project, repo, itemId)` — the state of one item whose id you already have. Listing gated items is the inverse: which items are in state X. No adapter has any list, search, or query operation, and the portal has no item ids to start from, since that is precisely what it is asking.
+
+**They cannot carry the right credentials.** The adapters are constructed from the `Vendors:*` options that hold write-capable secrets (a GitHub App private key, a GitLab token with `write_repository`, an ADO PAT with Work Items read *and write*). The `portal-read-model` spec requires dedicated read-scoped credentials and states the portal MUST NOT use the agent's write-capable ones. Reusing the adapter type in the portal would leave that as a wiring convention: whoever composes the portal picks which credentials go in, and nothing in the type system objects to the write-capable ones.
+
+So: a separate `IBacklogReader` per vendor, in `Backlog.Contracts`, with only listing and reading operations, constructed from read-scoped options. This makes "the portal cannot write to a vendor" a compile-time fact rather than a deployment promise — the same move D6 in `jira-adapter` made for tracker versus code host, and for the same reason: an interface that *could* do the forbidden thing eventually will.
+
+Rejected alternatives:
+- *Add `ListItemsInStateAsync` to `IBacklogAdapter`.* Puts a portal-only concern on the contract the Receiver and Agent implement, and leaves the credential problem completely unsolved.
+- *Have the portal call each vendor's REST API directly.* Duplicates auth, paging, and state conventions the adapters already encode, and the two copies would drift on exactly the semantics (which label counts as the state) that must not.
+
+Consequences beyond the contract itself:
+- The registry gains **vendor coordinates**, which `StackAzureCoordinates` never had despite the spec listing them — a stack currently declares where its queue and workspace are but not which vendor or repo it tracks.
+- Read-scoped credentials become per-stack configuration and per-stack Terraform grants (task 5.1), not per-vendor global options: two clients on GitHub are two different installations.
+- **Task 4.1 depends on this too.** Manual dispatch has to re-read live vendor state before enqueueing, which is a vendor read from the portal — so this contract gates group 4's first task, not only 3.3.
+
 ## Migration Plan
 
 1. **Orchestrator side (additive, ships with the current change's stacks)**: add the normalized dispatch-outcome/enqueue `[LoggerMessage]` events; verify they land queryable in Log Analytics.

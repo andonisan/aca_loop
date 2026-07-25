@@ -17,3 +17,10 @@ stacks:
       queueName: ai-jobs
       jobName: ca-dsconnect-dev-agent
       logAnalyticsWorkspaceId: "00000000-0000-0000-0000-000000000000"
+    # Which tracker this stack's items live on, and the READ-SCOPED credential to read it with. The
+    # secret is named per stack, not per vendor: two clients on GitHub are two different installations,
+    # and the portal must never reach for the agent's write-capable secret (design D9).
+    vendor:
+      name: GitHub
+      repo: your-org/ds-connect
+      readCredentialSecretName: Portal--dsconnect-dev--GitHubReadToken
