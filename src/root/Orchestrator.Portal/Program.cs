@@ -58,6 +58,20 @@ builder.Services.AddRazorPages().AddMicrosoftIdentityUI();
 
 var app = builder.Build();
 
+// The portal owns the configstore schema and is the only host that migrates it: there is one portal,
+// while receivers are many and only read (design D8). Awaited before anything serves, so a schema that
+// cannot be brought up to date stops the process instead of surfacing later as failed queries.
+//
+// Skipped when no connection string is configured, which is how the UI is worked on and how the portal's
+// own tests boot without a database. That is not a silent-success path: with no connection string every
+// store query fails anyway, so an unconfigured portal is visibly unconfigured rather than quietly stale.
+// Once the store replaces stacks.yaml as the registry source (postgres-config-store task 4.1), absence
+// stops being survivable and this guard should become a hard failure.
+if (!string.IsNullOrWhiteSpace(builder.Configuration.GetConnectionString(Components.Database)))
+{
+    await app.Services.MigrateConfigStoreAsync();
+}
+
 // Health/liveness first and anonymous (MapDefaultEndpoints allows anonymous), so platform probes
 // never depend on Entra being reachable.
 app.MapDefaultEndpoints();
