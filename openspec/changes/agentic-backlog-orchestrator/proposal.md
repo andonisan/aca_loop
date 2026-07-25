@@ -2,7 +2,7 @@
 
 ## Why
 
-The v1 in this repo (`ai-loop-aca-job`) proved the pattern — a gate label on a GitHub issue dispatches a scale-to-zero ACA Job that runs the repo's own agent command — but everything that makes it work is hardcoded to one vendor (GitHub) and one client (ds-connect: two fixed labels, two fixed `/ds:*` commands). Teams live on different backlog vendors (Azure DevOps, GitHub, GitLab) with equivalent-but-differently-shaped lifecycles, so the automation must become a product: a backlog abstraction plus a configurable "state → AI action" engine, reusing the already-proven AI-pod dispatch on Azure Container Apps. See [`DOCS/products/orquestador-agentico-backlog.md`](../../../DOCS/products/orquestador-agentico-backlog.md) for the full product brief.
+The v1 in this repo (`ai-loop-aca-job`) proved the pattern — a gate label on a GitHub issue dispatches a scale-to-zero ACA Job that runs the repo's own agent command — but everything that makes it work is hardcoded to one vendor (GitHub) and one client (ds-connect: two fixed labels, two fixed `/ds:*` commands). Teams live on different backlog vendors (Azure DevOps, GitHub, GitLab) with equivalent-but-differently-shaped lifecycles, so the automation must become a product: a backlog abstraction plus a configurable "state → AI action" engine, reusing the already-proven AI-pod dispatch on Azure Container Apps. See [`docs/products/orquestador-agentico-backlog.md`](../../../docs/products/orquestador-agentico-backlog.md) for the full product brief.
 
 ## What Changes
 

@@ -32,6 +32,16 @@ review, code review, sync); the loop is closed by moving the state —
 requesting changes and re-applying a gate state re-dispatches the agent,
 which then sees the reviewer's comments.
 
+**Orient here:**
+
+- [`docs/context.md`](./docs/context.md) — why this exists, the actors, the domain terms.
+- [`ARCHITECTURE.md`](./ARCHITECTURE.md) — the components, the pipeline, the load-bearing invariants, where the code lives.
+- [`DESIGN.md`](./DESIGN.md) — design rationale, risks/trade-offs, open questions; decisions in [`docs/adr/`](./docs/adr/).
+- [`ONBOARDING.md`](./ONBOARDING.md) — zero to first contribution, including end-to-end verification.
+- [`AGENTS.md`](./AGENTS.md) — entry point for AI agents working in this repo.
+
+The rest of this file is the vendor reference and deployment quick-start.
+
 ## Vendors
 
 A vendor can be a **tracker** (it holds the work item and its state), a
@@ -149,7 +159,8 @@ D7 for the full rationale):
 
 1. Org Settings → Developer settings → **GitHub Apps** → New GitHub App.
    This is a **dedicated App** — do not reuse a CI runner App; keeping the
-   permission sets separate keeps the blast radius separate.
+   permission sets separate keeps the blast radius separate
+   ([ADR-0003](./docs/adr/0003-dedicated-github-app-separate-from-ci-runner-app.md)).
 2. **Repository permissions**: Issues **Read & write**, Contents **Read &
    write**, Pull requests **Read & write**.
 3. **Subscribe to events → Issues.**
@@ -339,8 +350,12 @@ or user-secrets instead.
   (`Execution:AllowedTools`).
 - **No orchestrator-side WIP guard.** Resolved by design, not an oversight
   — see design.md's open questions.
-- **GitLab/Azure DevOps are unpiloted.** Implemented and unit-tested, never
-  run against a live project. Don't treat them as production-ready until
-  someone closes that gap.
+- **GitLab, Azure DevOps, and Jira are unpiloted.** Implemented and
+  unit-tested, never run against a live instance. Don't treat them as
+  production-ready until someone closes that gap. For Jira, the Cloud vs
+  Data Center divergence only executes on the failure path, so a
+  happy-path pilot does not cover it.
 - **Copilot CLI is out of scope.** Its auth is tied to a user
   subscription; use GitHub's hosted Copilot coding agent natively instead.
+
+Then verify the deployment end to end — receiver, live run, and the deliberate edge cases — following [`ONBOARDING.md`](./ONBOARDING.md#3-verify-it-end-to-end).
