@@ -56,9 +56,11 @@ public sealed class PostgresConfigStore_Should_Constraint(PostgresFixture postgr
 
         // The schema is the module's isolation boundary; if the migration silently created these in
         // public, two modules would eventually collide on a table name.
+        // The "Value" alias is not cosmetic: SqlQuery<T> wraps this as `select s."Value" from (...) s`
+        // for scalar results, so a column by that exact name has to exist or the wrapper fails to bind.
         var schema = await db
             .Database.SqlQuery<string>(
-                $"select table_schema from information_schema.tables where table_name = 'stacks'"
+                $"""select table_schema as "Value" from information_schema.tables where table_name = 'stacks'"""
             )
             .SingleAsync();
 
@@ -121,7 +123,7 @@ public sealed class PostgresConfigStore_Should_Constraint(PostgresFixture postgr
         // An orphan state entry must be unrepresentable rather than merely unlikely (design D7).
         var orphans = await db
             .Database.SqlQuery<int>(
-                $"select count(*)::int from configstore.mapping_states where \"StackId\" = 'cascade-me'"
+                $"""select count(*)::int as "Value" from configstore.mapping_states where "StackId" = 'cascade-me'"""
             )
             .SingleAsync();
 
@@ -136,7 +138,7 @@ public sealed class PostgresConfigStore_Should_Constraint(PostgresFixture postgr
         await using var db = postgres.NewContext();
         var stored = await db
             .Database.SqlQuery<string>(
-                $"select \"Vendor\" from configstore.stacks where \"Id\" = 'enum-check'"
+                $"""select "Vendor" as "Value" from configstore.stacks where "Id" = 'enum-check'"""
             )
             .SingleAsync();
 
