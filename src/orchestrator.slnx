@@ -32,6 +32,10 @@
   <Folder Name="/modules/Jira/">
     <Project Path="modules/Jira/Orchestrator.Modules.Jira/Orchestrator.Modules.Jira.csproj" />
   </Folder>
+  <Folder Name="/modules/ConfigStore/">
+    <Project Path="modules/ConfigStore/Orchestrator.Modules.ConfigStore.Contracts/Orchestrator.Modules.ConfigStore.Contracts.csproj" />
+    <Project Path="modules/ConfigStore/Orchestrator.Modules.ConfigStore/Orchestrator.Modules.ConfigStore.csproj" />
+  </Folder>
   <Folder Name="/modules/Dispatch/">
     <Project Path="modules/Dispatch/Orchestrator.Modules.Dispatch.Contracts/Orchestrator.Modules.Dispatch.Contracts.csproj" />
     <Project Path="modules/Dispatch/Orchestrator.Modules.Dispatch/Orchestrator.Modules.Dispatch.csproj" />

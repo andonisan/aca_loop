@@ -9,4 +9,8 @@ public static class Components
     public const string Receiver = "receiver";
     public const string Agent = "agent";
     public const string Portal = "portal";
+
+    /// <summary>The Postgres database holding the configuration store. One physical database; modules
+    /// isolate by schema, following ds-connect's convention.</summary>
+    public const string Database = "database";
 }

@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Orchestrator.Modules.ConfigStore</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\shared\Orchestrator.BuildingBlocks\Orchestrator.BuildingBlocks.csproj" />
+    <ProjectReference Include="..\..\..\shared\Orchestrator.Constants\Orchestrator.Constants.csproj" />
+    <ProjectReference Include="..\..\Backlog\Orchestrator.Modules.Backlog.Contracts\Orchestrator.Modules.Backlog.Contracts.csproj" />
+    <ProjectReference Include="..\Orchestrator.Modules.ConfigStore.Contracts\Orchestrator.Modules.ConfigStore.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Orchestrator.Modules.ConfigStore.UnitTests" />
+  </ItemGroup>
+</Project>
