@@ -1,33 +1,38 @@
-/* Atlas design system, vendored.
+/* The Orchestrator Portal design system.
  *
- * UPSTREAM: https://atlas.plainconcepts.com/assets/index-DiydWycu.css
- * RETRIEVED: 2026-07-24 (46 128 bytes; publicly served asset, the app itself is Entra-gated)
+ * THIS FILE IS OURS. It started as a copy of Atlas's palette and primitives, but Atlas is a separate
+ * application — not an upstream dependency. There is no re-sync obligation, no expectation that the
+ * two stay aligned, and no shared package coming. Change anything here on its own merits; never
+ * justify or block a change by what Atlas does.
  *
- * Plain CSS, no build step, no framework — the same approach Atlas itself takes, which is why it
- * drops into Blazor unchanged. See openspec/changes/portal-design-system/design.md for the why.
+ * DERIVED FROM: https://atlas.plainconcepts.com/assets/index-DiydWycu.css
+ * TAKEN: 2026-07-24 (46 128 bytes; publicly served asset, the app itself is Entra-gated)
+ * Recorded as attribution and as a starting point for anyone comparing the two by eye.
  *
- * WHAT WAS TAKEN:
- *   Tokens (section 1)      transcribed VERBATIM, names preserved. Markup is therefore portable in
- *                           both directions: a snippet lifted from Atlas works here, and vice versa.
- *   Components (2-9)        RE-AUTHORED — expanded from Lightning CSS output into readable rules,
- *                           and filtered to the ~60 primitives this portal uses. Upstream has ~280;
- *                           the rest is Atlas-app-specific (App Hub tiles, document preview, chat
- *                           panel, risk matrices, login split) and was left upstream. Pulling another
- *                           primitive across later is mechanical — read it from the asset above.
+ * Plain CSS, no build step, no framework — which is why it drops into Blazor unchanged.
+ * See openspec/changes/archive/2026-07-24-portal-design-system/design.md for the reasoning.
  *
- * DELIBERATE DIVERGENCES (do not "fix" these during a re-sync — each is marked at its rule):
- *   - OS dark-mode fallback: upstream switches on [data-theme=dark] only, so a first visit is always
+ * WHAT WAS TAKEN, AND WHAT WE HAVE DONE SINCE:
+ *   Tokens (section 1)      copied value-for-value, names kept, then corrected — several pairs failed
+ *                           WCAG AA and were fixed (see the notes at those tokens). The names are
+ *                           still Atlas's, which is convenient, not contractual.
+ *   Components (2-9)        re-authored: expanded from Lightning CSS output into readable rules and
+ *                           filtered to the ~60 primitives this portal uses. Atlas has ~280; the rest
+ *                           was app-specific to it (App Hub tiles, document preview, chat panel, risk
+ *                           matrices, login split) and was never copied.
+ *
+ * Comments marked DIVERGENCE record where we knowingly differ from that original copy. They are
+ * history and rationale, not a sync contract — nothing here needs reverting to match Atlas. Our
+ * deliberate differences, in short:
+ *   - OS dark-mode fallback: Atlas switches on [data-theme=dark] only, so a first visit is always
  *     light. We add a prefers-color-scheme block guarded by :root:not([data-theme=light]).
+ *   - Contrast fixes to --fg-muted, --info, --brand-on, and --fg-subtle's permitted usage.
+ *   - A focus indicator for .search-input and nine primitives that had none.
  *   - Fonts loaded via <link rel=preconnect> + <link> in App.razor rather than an @import here.
  *
- * RE-SYNC PROCEDURE:
- *   1. Fetch the current asset (the hash in the filename changes every Atlas deploy; find it via
- *      the <link rel=stylesheet> on any Atlas page).
- *   2. Diff its :root and [data-theme=dark] blocks against section 1 here. Tokens are the stable
- *      layer and the part that must match — this diff is the whole job in the normal case.
- *   3. Apply token changes to BOTH the [data-theme=dark] block and the prefers-color-scheme copy.
- *   4. Eyeball the primitives; do not diff them — they are re-authored by design, so a textual diff
- *      is all noise.
+ * The dark palette is written twice (attribute block + prefers-color-scheme block) because plain CSS
+ * cannot alias one selector's declarations to another. A token changed in one MUST be changed in the
+ * other; DesignTokens_Should_Constraint enforces this, having already caught one real drift.
  *
  * FONTS: Geist / Geist Mono, loaded in App.razor. --font-sans falls back to system-ui, so a CSP or an
  * air-gapped network that blocks fonts.googleapis.com degrades the letterforms and nothing else —
@@ -89,7 +94,7 @@
   --danger-soft: oklch(96% 0.04 25);
   --danger-border: oklch(86% 0.07 25);
 
-  /* DIVERGENCE: upstream --info is L=52%, which measures 4.49:1 on --info-soft — a hair under the
+  /* DIVERGENCE: Atlas has --info at L=52%, which measures 4.49:1 on --info-soft — a hair under the
      4.5:1 AA floor for the 12px badge text it carries. Darkened half a step to 4.59:1 (task 4.2). */
   --info: oklch(51.5% 0.13 230);
   --info-soft: oklch(95% 0.04 230);
@@ -164,7 +169,7 @@
   --brand-soft: oklch(20% 0.05 258);
   --brand-border: oklch(30% 0.08 258);
 
-  /* DIVERGENCE: upstream leaves --brand-on as #fff in both themes, but white on the lightened
+  /* DIVERGENCE: Atlas leaves --brand-on as #fff in both themes, but white on the lightened
      dark-theme --brand measures 3.97:1 — a failing primary button, the most-clicked control in the
      app. Darkening --brand instead would fix the button and break --brand-as-text, which passes at
      4.73/5.06; --brand-on exists precisely to absorb this, so it flips to near-black: 5.06:1. */
@@ -179,7 +184,7 @@
 
   --fg: oklch(93% 0.005 258);
   --fg-2: oklch(78% 0.008 258);
-  /* DIVERGENCE: upstream is L=60%, which measures 4.17:1 on --surface-3 and 4.49:1 on --surface-2 —
+  /* DIVERGENCE: Atlas has L=60%, which measures 4.17:1 on --surface-3 and 4.49:1 on --surface-2 —
      both under AA for the 11px table headers and muted labels it carries. Lifted to 62%, clearing
      every dark surface at 4.52:1 or better (task 4.2). */
   --fg-muted: oklch(62% 0.012 258);
@@ -225,7 +230,7 @@
   --sh-focus: 0 0 0 3px oklch(55% 0.14 258 / 0.35);
 }
 
-/* DIVERGENCE FROM UPSTREAM (see header): follow the OS until an explicit choice exists. The block
+/* DIVERGENCE (see header): follow the OS until an explicit choice exists. The block
    below duplicates the dark tokens because plain CSS cannot alias one selector's declarations to
    another, and adding a preprocessor to save 45 lines is the worse trade. A token change must be
    applied to BOTH copies. */
@@ -539,7 +544,7 @@ button {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  /* DIVERGENCE: upstream uses --fg-subtle here. This is 11px text a reader has to read, and
+  /* DIVERGENCE: Atlas uses --fg-subtle here. This is 11px text a reader has to read, and
      --fg-subtle is decorative-only per the ramp note (task 4.2), so it takes --fg-muted. */
   color: var(--fg-muted);
 }
@@ -713,7 +718,7 @@ button {
 
 .tabs .tab .mono {
   font-size: var(--fs-11);
-  /* DIVERGENCE: upstream uses --fg-subtle. This is a count — information, not decoration. */
+  /* DIVERGENCE: Atlas uses --fg-subtle. This is a count — information, not decoration. */
   color: var(--fg-muted);
 }
 
@@ -1488,7 +1493,7 @@ textarea.input {
   outline: none;
 }
 
-/* DIVERGENCE: upstream strips .search-input's outline and supplies nothing, leaving the search field
+/* DIVERGENCE: Atlas strips .search-input's outline and supplies nothing, leaving the search field
    with no keyboard focus indicator at all (task 4.3). The ring goes on the wrapper. */
 .search-box:focus-within {
   border-color: var(--brand);
@@ -1631,7 +1636,7 @@ label.checkbox input[type="checkbox"]:checked::after {
 /* ==========================================================================
    7b. Focus
    ==========================================================================
-   ADDITION (not upstream): the primitives below carry no focus rule in Atlas, so they fall back to
+   ADDITION (not in Atlas): the primitives below carry no focus rule in Atlas, so they fall back to
    the user-agent ring. That technically satisfies "focus must be visible", but the default ring sits
    badly on the brand-tinted active states and differs per browser, so focus reads as a rendering
    artifact rather than as part of the system. One shared rule gives every control the same ring the

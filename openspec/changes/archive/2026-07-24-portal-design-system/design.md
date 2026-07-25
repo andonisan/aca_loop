@@ -42,6 +42,19 @@ The `:root` and `[data-theme=dark]` blocks are transcribed exactly, token names 
 *Accepted cost*: the snapshot drifts silently. Tokens drift slowly (that is their nature); the failure mode is "slightly stale", not "broken". Escalate to a package if a second consumer appears.
 *Alternative considered*: `@import` Atlas's stylesheet URL at runtime — rejected outright: it makes the portal's rendering depend on another app's deploy, inherits every unrelated class, and breaks the moment their asset hash changes.
 
+> **SUPERSEDED 2026-07-24, after archiving.** The re-sync obligation and the shared-package end state
+> are dropped: Atlas is a separate application, so the portal simply **owns** this palette. The origin
+> is still recorded as attribution, but nothing is expected to stay aligned and no reconciliation is
+> owed. The reasoning above is kept as the record of why the snapshot was taken in the first place;
+> what remains true from it is the rejection of a runtime `@import`. Consequences: the provenance
+> requirement in `openspec/specs/portal-design-system/spec.md` was rewritten, the stylesheet header no
+> longer carries a re-sync procedure, and task 4.6 (notify Atlas's owners) was dropped. The
+> `DIVERGENCE` comments throughout the stylesheet remain as rationale, not as a diff to reconcile.
+>
+> This also retires the *accepted cost* above: a snapshot that nobody intends to re-sync cannot go
+> stale. The risk it traded against — "portal slowly stops matching Atlas" — is no longer a risk,
+> because matching is no longer a goal.
+
 ### D4 — Domain state → visual treatment is a fixed mapping in code, not a per-page choice
 A small helper in the portal maps orchestrator states to badge classes, and pages call it rather than writing `class="badge danger"` inline:
 - **Run outcome** (the `dispatch-outcome` event of `orchestrator-portal` D3): `succeeded` → `ok`, `failed` → `danger`, `stale-gate` → `warn`, `poison` → `violet`.
