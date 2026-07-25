@@ -46,6 +46,7 @@
   <Folder Name="/tests/root/">
     <Project Path="tests/root/Orchestrator.Portal.UnitTests/Orchestrator.Portal.UnitTests.csproj" />
     <Project Path="tests/root/Orchestrator.Portal.FunctionalTests/Orchestrator.Portal.FunctionalTests.csproj" />
+    <Project Path="tests/root/Orchestrator.Portal.BrowserTests/Orchestrator.Portal.BrowserTests.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Orchestrator.ArchTests/Orchestrator.ArchTests.csproj" />
