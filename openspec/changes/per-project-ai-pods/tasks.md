@@ -1,5 +1,19 @@
 # Tasks — Per-Project AI Pods
 
+> **Blocked, deliberately. Do not start group 1 before this is resolved.**
+>
+> Two of the blockers are external and cannot be answered from the code:
+> - **Task 0.1** — the jobs-per-Container-Apps-environment quota. If hundreds of projects do not fit one
+>   environment, the environment becomes a pool with a placement rule and this is a materially different
+>   change. Building group 3 first would mean building the wrong topology.
+> - **Task 0.2** — Storage Queues vs Service Bus. The most expensive decision here to retrofit.
+>
+> And one is a sequencing dependency: this change assumes creating a stack is a form submission, which is
+> what `postgres-config-store` delivers. Applying this first would build per-project provisioning against
+> a registry that is still a hand-edited file.
+>
+> Order: `orchestrator-portal` groups 4-5 → `postgres-config-store` groups 1-4 → this.
+
 ## 0. Answer the question that can invalidate the rest
 
 - [ ] 0.1 Verify the **jobs-per-Container-Apps-environment quota** against the target project count, and whether it is raisable by support request. This is first because the whole shape depends on it: if hundreds of projects do not fit one environment, the environment stops being a single Terraform-owned resource and becomes a pool with a placement rule, which is a materially different change from the one proposed

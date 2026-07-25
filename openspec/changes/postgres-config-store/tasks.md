@@ -1,5 +1,11 @@
 # Tasks — Postgres Config Store
 
+> Groups 1-4 are implementable now: schema, read path, cache and portal CRUD are all code, and the read
+> path can be tested against a real Postgres via Testcontainers the same way `QueueDepthSource` is tested
+> against Azurite. Group 5 needs Azure (server, networking, backup/restore) and a cutover window.
+>
+> `per-project-ai-pods` depends on this change and is blocked until at least groups 1-4 land.
+
 ## 1. Schema, module, and migrations
 
 - [ ] 1.1 Create `src/modules/ConfigStore/Orchestrator.Modules.ConfigStore.Contracts` with the read contract both hosts consume (`IConfigStore`: load the registry, load one stack's mapping) and the stored shapes, kept distinct from `Dispatch.Contracts`' validated `MappingConfig` so the store's row model and the resolver's model can differ without one dragging the other
