@@ -20,6 +20,21 @@ public enum VerbOutcome
 }
 
 /// <summary>
+/// The dispatch verb, behind an interface for the same reason <c>IPanelReader</c> is: a page's rendering
+/// of an outcome is a separate claim from the verb's decision to reach it, and only one of the two can be
+/// checked in a browser. The decision belongs to a unit test against the implementation below.
+/// </summary>
+interface IManualDispatch
+{
+    Task<DispatchResult> DispatchAsync(
+        RegisteredStack stack,
+        string itemId,
+        string actor,
+        CancellationToken cancellationToken = default
+    );
+}
+
+/// <summary>
 /// Manual dispatch: re-enqueue an item that is genuinely sitting at a gate.
 /// <para>
 /// The gate invariant is the whole product's concurrency lock — an item dispatches because it is in a
@@ -37,7 +52,7 @@ sealed class ManualDispatch(
     BacklogReaderFactory readers,
     StackQueueClientFactory queueFactory,
     ILogger<ManualDispatch> logger
-)
+) : IManualDispatch
 {
     public async Task<DispatchResult> DispatchAsync(
         RegisteredStack stack,

@@ -5,6 +5,17 @@ using Orchestrator.Portal.Registry;
 
 namespace Orchestrator.Portal.Operations;
 
+/// <summary>The cancel verb, behind an interface for the same reason as <see cref="IManualDispatch"/>.</summary>
+interface ICancelExecution
+{
+    Task<DispatchResult> CancelAsync(
+        RegisteredStack stack,
+        string executionName,
+        string actor,
+        CancellationToken cancellationToken = default
+    );
+}
+
 /// <summary>
 /// Stops a running AI-pod execution.
 /// <para>
@@ -17,6 +28,7 @@ namespace Orchestrator.Portal.Operations;
 /// </para>
 /// </summary>
 sealed class CancelExecution(TokenCredential credential, ILogger<CancelExecution> logger)
+    : ICancelExecution
 {
     public async Task<DispatchResult> CancelAsync(
         RegisteredStack stack,

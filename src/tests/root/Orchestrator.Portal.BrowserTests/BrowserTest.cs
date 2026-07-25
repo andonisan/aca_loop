@@ -29,6 +29,7 @@ public abstract class BrowserTest
     {
         Fixture = fixture;
         fixture.Panels.Reset();
+        fixture.Verbs.Reset();
         fixture.Roles = [PortalRoles.Operator];
     }
 

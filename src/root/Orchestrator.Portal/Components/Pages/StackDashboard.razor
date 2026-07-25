@@ -17,8 +17,8 @@
 @inject Func<TimeSpan, RunHistorySource> HistoryFor
 @inject GatedItemsSource GatedItems
 @inject NavigationManager Navigation
-@inject ManualDispatch Dispatch
-@inject CancelExecution Cancel
+@inject IManualDispatch Dispatch
+@inject ICancelExecution Cancel
 
 @* One stack's live state. Every panel goes through IPanelReader, so each renders its own unavailable
    state independently -- one broken Azure source must not cost the page (portal-read-model spec). The

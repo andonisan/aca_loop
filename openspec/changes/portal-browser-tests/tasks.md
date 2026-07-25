@@ -19,10 +19,9 @@
 
 ## 3. Interactions
 
-> 3.4 is done now that the verb UI exists. 3.2-3.3 still need a **test seam**: they assert on the three
-> outcomes as rendered, and `ManualDispatch`/`CancelExecution` are concrete classes that reach Azure and
-> the vendor for real, so a browser test cannot currently choose an outcome. Deciding that seam is the
-> next piece of work here — the panels precedent is `IPanelReader`.
+> Group complete. The seam 3.2-3.3 needed is `IManualDispatch`/`ICancelExecution`, following the
+> `IPanelReader` precedent: the page's rendering of an outcome and the verb's decision to reach one are
+> two claims, and only the first is a browser's business.
 >
 > (Previously: 3.2-3.4 were blocked on `orchestrator-portal` group 4: they assert on verb affordances (dispatch
 > and cancel buttons, and their absence for a reader) and no page invokes `ManualDispatch` or
@@ -30,8 +29,8 @@
 > done.)
 
 - [x] 3.1 The history window selector re-reads and re-renders against the new window. Untestable over HTTP: it only works over the interactive circuit — **and it did not work at all.** No component declared a render mode, so despite the host registering interactive server components, every page rendered as static SSR and the selector's `@onchange` never fired. Written test-first: it failed on the post-selection assertion, which is exactly the failure the task predicted the suite would be needed for. Fixed with `@rendermode InteractiveServer` on `StackDashboard` only — every other page is read-only and does not need a circuit per viewer
-- [ ] 3.2 Manual dispatch reports each of its three outcomes distinctly, and the refusal shows the live state that caused it — the detail that makes a refusal actionable rather than merely negative
-- [ ] 3.3 Cancel on an already-terminal execution reports a no-op rather than success
+- [x] 3.2 Manual dispatch reports each of its three outcomes distinctly, and the refusal shows the live state that caused it — the detail that makes a refusal actionable rather than merely negative. Verbs stubbed behind `IManualDispatch`/`ICancelExecution`, so what is asserted is the *rendering* of an outcome, not the verb's decision to reach it; the decision belongs to a unit test (orchestrator-portal 4.3). Mutation-verified: collapsing `data-outcome` to a constant fails three of these
+- [x] 3.3 Cancel on an already-terminal execution reports a no-op rather than success — rendered as a refusal, visibly not a success, because an operator who reads "cancelled" against a run that finished two minutes ago will believe they stopped something
 - [x] 3.4 A reader-role user cannot reach the verbs from the UI. The server-side refusal is covered elsewhere; this covers that the affordance is absent, which is a different claim — paired with an Operator control case, so a selector typo cannot make the reader assertion pass vacuously. Mutation-verified: dropping the Operate policy from the dispatch button fails the reader test
 
 ## 4. CI and close-out

@@ -13,6 +13,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.Playwright;
 using Orchestrator.Constants;
 using Orchestrator.Modules.Backlog.Contracts;
+using Orchestrator.Portal.Operations;
 using Orchestrator.Portal.ReadModel;
 using Orchestrator.Portal.Registry;
 
@@ -38,6 +39,8 @@ public sealed class PortalBrowserFixture : WebApplicationFactory<Program>, IAsyn
     IPlaywright? _playwright;
 
     internal StubPanelReader Panels { get; } = new();
+
+    internal StubVerbs Verbs { get; } = new();
 
     /// <summary>
     /// Two stacks, overridden rather than taken from <c>stacks.yaml</c>.
@@ -140,6 +143,8 @@ public sealed class PortalBrowserFixture : WebApplicationFactory<Program>, IAsyn
         {
             services.AddSingleton<IPanelReader>(Panels);
             services.AddSingleton(TestRegistry);
+            services.AddSingleton<IManualDispatch>(Verbs);
+            services.AddSingleton<ICancelExecution>(Verbs);
 
             services
                 .AddAuthentication(SchemeName)
