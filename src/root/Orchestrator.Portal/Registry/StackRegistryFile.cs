@@ -39,6 +39,13 @@ sealed class StackRegistryFileVendor
     /// that the portal never reaches for the agent's write-capable secret.
     /// </summary>
     public string? ReadCredentialSecretName { get; init; }
+
+    /// <summary>Instance address, e.g. "https://gitlab.example.com" or "https://acme.atlassian.net" or
+    /// "https://dev.azure.com/contoso". Optional only for GitHub, whose API address is fixed.</summary>
+    public string? BaseUrl { get; init; }
+
+    /// <summary>Jira only: <c>Cloud</c> or <c>DataCenter</c>.</summary>
+    public string? Deployment { get; init; }
 }
 
 sealed class StackRegistryFileAzure

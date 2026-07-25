@@ -38,7 +38,14 @@ public sealed class QueueDepthSource_Should_Constraint(AzuriteFixture azurite)
             "agent-job",
             "workspace"
         ),
-        new StackVendorCoordinates(Vendor.GitHub, null, "acme/widgets", "Portal--Read")
+        new StackVendorCoordinates(
+            Vendor.GitHub,
+            null,
+            "acme/widgets",
+            "Portal--Read",
+            new Uri("https://api.github.com"),
+            null
+        )
     );
 
     [Fact]

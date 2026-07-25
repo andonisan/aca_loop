@@ -144,6 +144,37 @@ static class StackRegistryLoader
                 readSecret = null;
             }
 
+            // GitHub's API address is fixed; every other vendor is per-instance and the portal serves
+            // stacks on different instances, so it cannot come from a per-vendor setting.
+            Uri? vendorBaseUrl = null;
+            var rawBaseUrl = string.IsNullOrWhiteSpace(rawVendor.BaseUrl)
+                ? vendor == Vendor.GitHub
+                    ? "https://api.github.com"
+                    : null
+                : rawVendor.BaseUrl;
+            if (rawBaseUrl is null)
+            {
+                errors.Add($"{prefix}.vendor.baseUrl is required for {vendor}");
+            }
+            else if (!Uri.TryCreate(rawBaseUrl, UriKind.Absolute, out vendorBaseUrl))
+            {
+                errors.Add($"{prefix}.vendor.baseUrl '{rawBaseUrl}' is not an absolute URI");
+            }
+
+            // Jira's deployment decides REST version, comment format and auth together, so a wrong value
+            // fails on the failure path -- validate it here rather than discover it then.
+            if (
+                vendor == Vendor.Jira
+                && !string.IsNullOrWhiteSpace(rawVendor.Deployment)
+                && rawVendor.Deployment is not ("Cloud" or "DataCenter")
+            )
+            {
+                errors.Add(
+                    $"{prefix}.vendor.deployment '{rawVendor.Deployment}' must be Cloud or DataCenter"
+                );
+                vendorBaseUrl = null;
+            }
+
             if (
                 id is null
                 || mappingPath is null
@@ -155,6 +186,7 @@ static class StackRegistryLoader
                 || workspaceId is null
                 || vendorName is null
                 || readSecret is null
+                || vendorBaseUrl is null
             )
             {
                 continue;
@@ -177,7 +209,9 @@ static class StackRegistryLoader
                         vendor,
                         rawVendor.Project,
                         rawVendor.Repo ?? string.Empty,
-                        readSecret
+                        readSecret,
+                        vendorBaseUrl,
+                        rawVendor.Deployment
                     )
                 )
             );

@@ -24,3 +24,6 @@ stacks:
       name: GitHub
       repo: your-org/ds-connect
       readCredentialSecretName: Portal--dsconnect-dev--GitHubReadToken
+      # Optional for GitHub only, whose API address is fixed. Required for GitLab, Azure DevOps and
+      # Jira, because the portal serves stacks on different instances.
+      # baseUrl: https://api.github.com

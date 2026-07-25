@@ -1,4 +1,5 @@
 @page "/stacks/{StackId}"
+@using Orchestrator.Modules.Backlog.Contracts
 @using Orchestrator.Portal.Presentation
 @using Orchestrator.Portal.ReadModel
 @using Orchestrator.Portal.Registry
@@ -7,6 +8,7 @@
 @inject QueueDepthSource QueueDepth
 @inject PodExecutionsSource PodExecutions
 @inject Func<TimeSpan, RunHistorySource> HistoryFor
+@inject GatedItemsSource GatedItems
 @inject NavigationManager Navigation
 
 @* One stack's live state. Every panel goes through IPanelReader, so each renders its own unavailable
@@ -101,6 +103,58 @@
 
 <div class="card">
     <div class="card-head">
+        <h2>At a gate</h2>
+        <PanelAge Panel="_gated" />
+    </div>
+    <div class="card-body flush">
+        @if (!_gated.IsAvailable)
+        {
+            <div class="card-body"><PanelUnavailable Panel="_gated" Source="the vendor" /></div>
+        }
+        else if (_gated.Value!.Count == 0)
+        {
+            @* Not an error: an empty gate is the steady state of a caught-up project. *@
+            <div class="empty"><span>No items are currently in a mapped gate state.</span></div>
+        }
+        else
+        {
+            <table class="dtable">
+                <thead>
+                    <tr><th>Item</th><th>State</th><th>Assignee</th><th>Updated</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in _gated.Value)
+                    {
+                        <tr>
+                            <td>
+                                <div class="cell-primary">
+                                    @if (item.Url is not null)
+                                    {
+                                        <a href="@item.Url" target="_blank" rel="noopener noreferrer">@item.Title</a>
+                                    }
+                                    else
+                                    {
+                                        @item.Title
+                                    }
+                                </div>
+                                <div class="cell-secondary mono">@item.ItemId</div>
+                            </td>
+                            @* The raw vendor state, not a treatment: these are the client's own gate names
+                               and mapping them onto a fixed palette would assert a meaning this portal
+                               does not have. *@
+                            <td class="mono">@item.NativeState</td>
+                            <td>@(item.Assignee ?? "—")</td>
+                            <td>@Format.Absolute(item.UpdatedAt)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-head">
         <h2>Run history</h2>
         <div>
             <select class="input" value="@_windowDays" @onchange="OnWindowChanged" aria-label="History window">
@@ -180,6 +234,8 @@
     Panel<IReadOnlyList<PodExecution>> _executions =
         Panel<IReadOnlyList<PodExecution>>.Failed("not loaded", default);
     Panel<RunHistory> _history = Panel<RunHistory>.Failed("not loaded", default);
+    Panel<IReadOnlyList<BacklogItem>> _gated =
+        Panel<IReadOnlyList<BacklogItem>>.Failed("not loaded", default);
 
     protected override async Task OnParametersSetAsync()
     {
@@ -201,12 +257,14 @@
         var queue = Panels.ReadAsync(QueueDepth, _stack!);
         var executions = Panels.ReadAsync(PodExecutions, _stack!);
         var history = Panels.ReadAsync(HistoryFor(TimeSpan.FromDays(_windowDays)), _stack!);
+        var gated = Panels.ReadAsync(GatedItems, _stack!);
 
-        await Task.WhenAll(queue, executions, history);
+        await Task.WhenAll(queue, executions, history, gated);
 
         _queue = queue.Result;
         _executions = executions.Result;
         _history = history.Result;
+        _gated = gated.Result;
     }
 
     async Task OnWindowChanged(ChangeEventArgs args)

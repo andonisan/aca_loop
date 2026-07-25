@@ -27,6 +27,10 @@
          too — MOD002 constrains modules referencing each other, not hosts composing them. -->
     <ProjectReference Include="..\..\modules\Backlog\Orchestrator.Modules.Backlog.Contracts\Orchestrator.Modules.Backlog.Contracts.csproj" />
     <ProjectReference Include="..\..\modules\GitHub\Orchestrator.Modules.GitHub\Orchestrator.Modules.GitHub.csproj" />
+    <ProjectReference Include="..\..\modules\GitLab\Orchestrator.Modules.GitLab\Orchestrator.Modules.GitLab.csproj" />
+    <ProjectReference Include="..\..\modules\AzureDevOps\Orchestrator.Modules.AzureDevOps\Orchestrator.Modules.AzureDevOps.csproj" />
+    <ProjectReference Include="..\..\modules\Jira\Orchestrator.Modules.Jira\Orchestrator.Modules.Jira.csproj" />
+    <ProjectReference Include="..\..\modules\Dispatch\Orchestrator.Modules.Dispatch.Contracts\Orchestrator.Modules.Dispatch.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>

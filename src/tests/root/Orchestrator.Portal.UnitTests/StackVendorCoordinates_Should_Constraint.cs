@@ -90,6 +90,7 @@ public class StackVendorCoordinates_Should_Constraint
             """
                 vendor:
                   name: Jira
+                  baseUrl: https://acme.atlassian.net
                   readCredentialSecretName: Portal--s--Read
             """
         );
@@ -107,6 +108,7 @@ public class StackVendorCoordinates_Should_Constraint
                 vendor:
                   name: Jira
                   project: DSC
+                  baseUrl: https://acme.atlassian.net
                   readCredentialSecretName: Portal--s--Read
             """
         );

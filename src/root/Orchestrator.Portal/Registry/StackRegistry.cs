@@ -29,11 +29,18 @@ public sealed record RegisteredStack(
 /// <param name="ReadCredentialSecretName">Key Vault secret holding this stack's <b>read-scoped</b>
 /// credential. Per stack rather than per vendor: two clients on the same vendor are two different
 /// installations, and the portal must never reach for the agent's write-capable secret (design D9).</param>
+/// <param name="BaseUrl">The vendor instance this stack lives on. Per stack, not per vendor: the portal
+/// serves many stacks and two of them can be on different GitLab or Jira instances entirely. Defaulted for
+/// GitHub, whose API address is fixed.</param>
+/// <param name="Deployment">Jira only: <c>Cloud</c> or <c>DataCenter</c>, which selects REST version and
+/// auth scheme (jira-adapter design D11). Per stack for the same reason as <paramref name="BaseUrl"/>.</param>
 public sealed record StackVendorCoordinates(
     Vendor Vendor,
     string? Project,
     string Repo,
-    string ReadCredentialSecretName
+    string ReadCredentialSecretName,
+    Uri BaseUrl,
+    string? Deployment
 );
 
 /// <param name="QueueServiceUri">Queue service endpoint, e.g. <c>https://acct.queue.core.windows.net</c>.</param>

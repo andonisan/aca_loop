@@ -30,7 +30,9 @@ public class CachedPanelReader_Should_Constraint
             Vendor.GitHub,
             Project: null,
             Repo: "acme/widgets",
-            ReadCredentialSecretName: "Portal--dsconnect-dev--GitHubReadToken"
+            ReadCredentialSecretName: "Portal--dsconnect-dev--GitHubReadToken",
+            BaseUrl: new Uri("https://api.github.com"),
+            Deployment: null
         )
     );
 

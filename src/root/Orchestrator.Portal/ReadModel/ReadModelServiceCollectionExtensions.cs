@@ -32,6 +32,11 @@ public static class ReadModelServiceCollectionExtensions
         services.AddSingleton(sp =>
             StackQueueClient.ForCredential(sp.GetRequiredService<TokenCredential>())
         );
+        services.AddHttpClient("vendor-read");
+        services.AddSingleton<IReadCredentialResolver, ReadCredentialResolver>();
+        services.AddSingleton<BacklogReaderFactory>();
+        services.AddSingleton<GatedItemsSource>();
+
         services.AddSingleton<QueueDepthSource>();
         services.AddSingleton<PodExecutionsSource>();
 
