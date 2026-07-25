@@ -1,6 +1,7 @@
 using Azure.Core;
 using Azure.Identity;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 
 namespace Orchestrator.Portal.ReadModel;
 
@@ -29,6 +30,17 @@ public static class ReadModelServiceCollectionExtensions
         services.AddSingleton<IPanelReader, CachedPanelReader>();
 
         services.AddSingleton<QueueDepthSource>();
+        services.AddSingleton<PodExecutionsSource>();
+
+        // Constructed per window rather than registered as a singleton: the window is part of the
+        // source's cache identity, so a 7-day view never serves rows to a 24-hour one.
+        services.AddSingleton<Func<TimeSpan, RunHistorySource>>(sp =>
+            window => new RunHistorySource(
+                sp.GetRequiredService<TokenCredential>(),
+                sp.GetRequiredService<IOptions<ReadModelOptions>>(),
+                window
+            )
+        );
 
         return services;
     }

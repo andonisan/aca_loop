@@ -21,4 +21,12 @@ public sealed class ReadModelOptions
     /// <summary>Cross-workspace KQL is the expensive one, over data that is effectively immutable once
     /// written.</summary>
     public TimeSpan HistoryTtl { get; init; } = TimeSpan.FromMinutes(5);
+
+    /// <summary>How many history rows the list shows. The success rate is counted separately over the
+    /// whole window, so capping this does not skew it.</summary>
+    public int HistoryRuns { get; init; } = 100;
+
+    /// <summary>How many pod executions the live panel shows. A cap, not a page size: older runs belong
+    /// to the history view, which reads Log Analytics rather than what ACA still retains.</summary>
+    public int RecentExecutions { get; init; } = 20;
 }
