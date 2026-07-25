@@ -1,0 +1,220 @@
+@page "/stacks/{StackId}"
+@using Orchestrator.Portal.Presentation
+@using Orchestrator.Portal.ReadModel
+@using Orchestrator.Portal.Registry
+@inject StackRegistry Registry
+@inject IPanelReader Panels
+@inject QueueDepthSource QueueDepth
+@inject PodExecutionsSource PodExecutions
+@inject Func<TimeSpan, RunHistorySource> HistoryFor
+@inject NavigationManager Navigation
+
+@* One stack's live state. Every panel goes through IPanelReader, so each renders its own unavailable
+   state independently -- one broken Azure source must not cost the page (portal-read-model spec). The
+   patterns here follow Home.razor, the design system's reference consumer. *@
+
+@if (_stack is null)
+{
+    <SectionContent SectionName="@PortalSections.PageHeader">
+        <div class="page-title-row"><h1>Unknown stack</h1></div>
+    </SectionContent>
+
+    <div class="banner danger">
+        <span>
+            No stack with id <span class="mono">@StackId</span> is registered. Membership comes from
+            <span class="mono">stacks.yaml</span> only — there is no auto-discovery.
+        </span>
+    </div>
+    return;
+}
+
+<SectionContent SectionName="@PortalSections.PageHeader">
+    <div class="breadcrumbs">
+        <a class="crumb" href="/">Portal</a>
+        <span class="crumb-current">@_stack.DisplayName</span>
+    </div>
+    <div class="page-title-row">
+        <h1>@_stack.DisplayName</h1>
+        <span class="mono muted" style="font-size:var(--fs-12)">@_stack.Id</span>
+    </div>
+</SectionContent>
+
+<div class="card">
+    <div class="card-head">
+        <h2>Dispatch queue</h2>
+        <PanelAge Panel="_queue" />
+    </div>
+    <div class="card-body">
+        @if (!_queue.IsAvailable)
+        {
+            <PanelUnavailable Panel="_queue" Source="the queue" />
+        }
+        else
+        {
+            <StatusBadgeView Badge="StatusTreatment.ForQueueDepth(_queue.Value, warnAt: 5, dangerAt: 20)" />
+            <p class="muted" style="margin-top:var(--sp-2)">
+                Approximate: Azure Storage offers no exact count, and this includes messages currently
+                held invisible by a running pod.
+            </p>
+        }
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-head">
+        <h2>AI pods</h2>
+        <PanelAge Panel="_executions" />
+    </div>
+    <div class="card-body flush">
+        @if (!_executions.IsAvailable)
+        {
+            <div class="card-body"><PanelUnavailable Panel="_executions" Source="the Container Apps job" /></div>
+        }
+        else if (_executions.Value!.Count == 0)
+        {
+            <div class="empty"><span>No executions retained for this job.</span></div>
+        }
+        else
+        {
+            <table class="dtable">
+                <thead>
+                    <tr><th>Execution</th><th>State</th><th>Started</th><th>Duration</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var execution in _executions.Value)
+                    {
+                        <tr>
+                            <td class="mono">@execution.Name</td>
+                            <td>
+                                <StatusBadgeView Badge="StatusTreatment.ForExecution(execution.State)"
+                                                 Title="@execution.RawStatus" />
+                            </td>
+                            <td>@Format.Absolute(execution.StartedAt)</td>
+                            <td>@Format.Duration(execution.Duration)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-head">
+        <h2>Run history</h2>
+        <div>
+            <select class="input" value="@_windowDays" @onchange="OnWindowChanged" aria-label="History window">
+                @foreach (var days in WindowChoices)
+                {
+                    <option value="@days" selected="@(days == _windowDays)">last @days d</option>
+                }
+            </select>
+        </div>
+    </div>
+    <div class="card-body flush">
+        @if (!_history.IsAvailable)
+        {
+            <div class="card-body"><PanelUnavailable Panel="_history" Source="Log Analytics" /></div>
+        }
+        else
+        {
+            <div class="card-body">
+                @if (_history.Value!.SuccessRate is { } rate)
+                {
+                    <span class="badge @(rate >= 0.9 ? "ok" : rate >= 0.6 ? "warn" : "danger")">
+                        <span class="dot"></span>@rate.ToString("P0") succeeded
+                    </span>
+                    <span class="muted" style="margin-left:var(--sp-2)">
+                        @_history.Value.TotalRuns run@(_history.Value.TotalRuns == 1 ? "" : "s") in window
+                    </span>
+                }
+                else
+                {
+                    @* Not a 0% success rate -- nothing ran, which reads very differently. *@
+                    <span class="muted">No runs in this window.</span>
+                }
+                <p class="muted" style="margin-top:var(--sp-2);font-size:var(--fs-12)">
+                    History depth is this workspace's retention: the portal stores nothing of its own, so
+                    anything aged out of Log Analytics is gone here too.
+                </p>
+            </div>
+
+            @if (_history.Value.Runs.Count > 0)
+            {
+                <table class="dtable">
+                    <thead>
+                        <tr><th>When</th><th>Item</th><th>Action</th><th>Outcome</th><th>Duration</th><th>Logs</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var run in _history.Value.Runs)
+                        {
+                            <tr>
+                                <td>@Format.Absolute(run.At)</td>
+                                <td>
+                                    <div class="cell-primary mono">@run.ItemId</div>
+                                    <div class="cell-secondary mono">@(run.Repo ?? run.Vendor)</div>
+                                </td>
+                                <td class="mono">@run.Action</td>
+                                <td><StatusBadgeView Badge="StatusTreatment.ForOutcome(run.Outcome)" Title="@run.Outcome" /></td>
+                                <td>@Format.Duration(run.Duration)</td>
+                                <td class="mono" style="font-size:var(--fs-12)">@run.LogPointer</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    static readonly int[] WindowChoices = [1, 7, 30];
+
+    [Parameter]
+    public required string StackId { get; set; }
+
+    RegisteredStack? _stack;
+    int _windowDays = 7;
+
+    Panel<int> _queue = Panel<int>.Failed("not loaded", default);
+    Panel<IReadOnlyList<PodExecution>> _executions =
+        Panel<IReadOnlyList<PodExecution>>.Failed("not loaded", default);
+    Panel<RunHistory> _history = Panel<RunHistory>.Failed("not loaded", default);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _stack = Registry.Stacks.FirstOrDefault(s =>
+            string.Equals(s.Id, StackId, StringComparison.OrdinalIgnoreCase)
+        );
+        if (_stack is null)
+        {
+            return;
+        }
+
+        await LoadAsync();
+    }
+
+    async Task LoadAsync()
+    {
+        // Concurrently, and every one of them individually degrading: three sequential awaits would make
+        // the page as slow as the sum of them, and one timing out would delay the two that are healthy.
+        var queue = Panels.ReadAsync(QueueDepth, _stack!);
+        var executions = Panels.ReadAsync(PodExecutions, _stack!);
+        var history = Panels.ReadAsync(HistoryFor(TimeSpan.FromDays(_windowDays)), _stack!);
+
+        await Task.WhenAll(queue, executions, history);
+
+        _queue = queue.Result;
+        _executions = executions.Result;
+        _history = history.Result;
+    }
+
+    async Task OnWindowChanged(ChangeEventArgs args)
+    {
+        if (int.TryParse(args.Value?.ToString(), out var days))
+        {
+            _windowDays = days;
+            await LoadAsync();
+        }
+    }
+}

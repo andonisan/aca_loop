@@ -1,0 +1,31 @@
+@typeparam TValue
+@using Orchestrator.Portal.ReadModel
+
+@* One panel's failure, rendered in place of that panel's content. Named for what it is so a page cannot
+   accidentally render a failure as an empty success -- an empty table and a broken source look identical
+   otherwise, and the second one is the one an operator must not misread as "nothing is queued". *@
+
+<div class="banner warn">
+    <span class="banner-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" aria-hidden="true">
+            <path d="M12 9v4M12 17h.01" />
+            <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
+        </svg>
+    </span>
+    <span>
+        Could not read @Source. The rest of this page is unaffected.
+        <span class="mono" style="display:block;font-size:var(--fs-12);margin-top:var(--sp-1)">
+            @Panel.Unavailable
+        </span>
+    </span>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public required Panel<TValue> Panel { get; set; }
+
+    /// <summary>What could not be read, phrased to complete "Could not read …".</summary>
+    [Parameter, EditorRequired]
+    public required string Source { get; set; }
+}

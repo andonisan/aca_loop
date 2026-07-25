@@ -1,0 +1,21 @@
+@typeparam TValue
+@using Orchestrator.Portal.Presentation
+@using Orchestrator.Portal.ReadModel
+@inject TimeProvider Time
+
+@* How old the data in a panel actually is. Shown because every panel is cached with its own TTL, so
+   "now" on screen is never quite now, and an operator deciding whether to act on a queue depth needs to
+   know whether they are looking at a value from two seconds ago or from the last poll before an
+   outage. *@
+
+@if (Panel.IsAvailable)
+{
+    <span class="muted mono" style="font-size:var(--fs-12)" title="@Format.Absolute(Panel.RetrievedAt)">
+        @Format.Age(Time.GetUtcNow() - Panel.RetrievedAt)
+    </span>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public required Panel<TValue> Panel { get; set; }
+}

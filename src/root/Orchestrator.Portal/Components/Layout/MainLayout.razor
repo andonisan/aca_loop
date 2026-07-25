@@ -25,6 +25,19 @@
            the gate would leak the client list to any authenticated tenant user. *@
         <AuthorizeView Policy="@PortalPolicies.Read">
             <Authorized>
+                @* Behind the same Read gate as the stack list below: the rollup is stack data too. *@
+                <nav class="nav-group">
+                    <NavLink class="nav-item" href="overview">
+                        <span class="nav-icon">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                                <path d="M3 12h4l3 8 4-16 3 8h4" />
+                            </svg>
+                        </span>
+                        <span class="nav-label">Overview</span>
+                    </NavLink>
+                </nav>
+
                 <div class="sidebar-section-title">Stacks</div>
                 <nav class="nav-group">
                     @* Driven off the registry, so adding a stack to stacks.yaml needs no markup change. *@

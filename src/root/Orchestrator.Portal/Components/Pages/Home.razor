@@ -49,7 +49,9 @@
                     {
                         <tr>
                             <td>
-                                <div class="cell-primary">@stack.DisplayName</div>
+                                <div class="cell-primary">
+                                    <a href="@($"/stacks/{stack.Id}")">@stack.DisplayName</a>
+                                </div>
                                 <div class="cell-secondary mono">@stack.Id</div>
                             </td>
                             <td class="mono">@stack.Azure.ResourceGroup</td>
@@ -73,7 +75,8 @@
         </svg>
     </span>
     <span>
-        Queue depth, running pods, and run history land in <span class="mono">orchestrator-portal</span>
-        tasks 3.1&#8209;3.4. This view reads the registry only — no Azure or vendor calls yet.
+        Gated work items land in <span class="mono">orchestrator-portal</span> task 3.3, which needs a
+        read-only listing capability the vendor adapters do not have yet. Queue depth, pods, and run
+        history are on each stack's page.
     </span>
 </div>

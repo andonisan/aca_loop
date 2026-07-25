@@ -1,0 +1,131 @@
+@page "/overview"
+@using Orchestrator.Portal.Presentation
+@using Orchestrator.Portal.ReadModel
+@using Orchestrator.Portal.Registry
+@inject StackRegistry Registry
+@inject IPanelReader Panels
+@inject QueueDepthSource QueueDepth
+@inject PodExecutionsSource PodExecutions
+@inject Func<TimeSpan, RunHistorySource> HistoryFor
+
+@* The reason the portal exists: one row per client stack, so "what are the loops doing" is answerable
+   without opening five dashboards. Each cell degrades on its own -- a stack whose Azure sources are
+   unreachable shows as unreadable in those columns rather than removing the row, because a stack silently
+   missing from an overview is the worst possible failure mode here. *@
+
+<SectionContent SectionName="@PortalSections.PageHeader">
+    <div class="breadcrumbs">
+        <a class="crumb" href="/">Portal</a>
+        <span class="crumb-current">Overview</span>
+    </div>
+    <div class="page-title-row">
+        <h1>All stacks</h1>
+        <span class="count-pill">@Registry.Stacks.Count</span>
+    </div>
+</SectionContent>
+
+<div class="card">
+    <div class="card-head">
+        <h2>Cross-stack rollup</h2>
+        <span class="muted" style="font-size:var(--fs-12)">last 7 d · cached per source</span>
+    </div>
+    <div class="card-body flush">
+        <table class="dtable">
+            <thead>
+                <tr><th>Stack</th><th>Queue</th><th>Running pods</th><th>Last outcome</th><th>Success rate</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var row in _rows)
+                {
+                    <tr>
+                        <td>
+                            <div class="cell-primary"><a href="@($"/stacks/{row.Stack.Id}")">@row.Stack.DisplayName</a></div>
+                            <div class="cell-secondary mono">@row.Stack.Id</div>
+                        </td>
+                        <td>
+                            @if (row.Queue.IsAvailable)
+                            {
+                                <StatusBadgeView Badge="StatusTreatment.ForQueueDepth(row.Queue.Value, warnAt: 5, dangerAt: 20)" />
+                            }
+                            else
+                            {
+                                <Unreadable Reason="@row.Queue.Unavailable" />
+                            }
+                        </td>
+                        <td>
+                            @if (row.Executions.IsAvailable)
+                            {
+                                <span class="mono">@row.Executions.Value!.Count(e => e.IsRunning)</span>
+                            }
+                            else
+                            {
+                                <Unreadable Reason="@row.Executions.Unavailable" />
+                            }
+                        </td>
+                        <td>
+                            @if (!row.History.IsAvailable)
+                            {
+                                <Unreadable Reason="@row.History.Unavailable" />
+                            }
+                            else if (row.History.Value!.Runs.Count == 0)
+                            {
+                                <span class="muted">no runs</span>
+                            }
+                            else
+                            {
+                                var last = row.History.Value.Runs[0];
+                                <StatusBadgeView Badge="StatusTreatment.ForOutcome(last.Outcome)" Title="@Format.Absolute(last.At)" />
+                            }
+                        </td>
+                        <td>
+                            @if (!row.History.IsAvailable)
+                            {
+                                <Unreadable Reason="@row.History.Unavailable" />
+                            }
+                            else if (row.History.Value!.SuccessRate is { } rate)
+                            {
+                                <span class="mono">@rate.ToString("P0")</span>
+                                <span class="muted" style="font-size:var(--fs-12)"> of @row.History.Value.TotalRuns</span>
+                            }
+                            else
+                            {
+                                <span class="muted">—</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    sealed record Row(
+        RegisteredStack Stack,
+        Panel<int> Queue,
+        Panel<IReadOnlyList<PodExecution>> Executions,
+        Panel<RunHistory> History
+    );
+
+    List<Row> _rows = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Fanned out across stacks and sources at once. The per-source TTL cache is what keeps this from
+        // becoming stacks x 3 Azure calls on every view -- a stack's dashboard and this page share cache
+        // entries, so opening both costs one set of reads, not two.
+        var rows = await Task.WhenAll(Registry.Stacks.Select(LoadRowAsync));
+        _rows = [.. rows];
+    }
+
+    async Task<Row> LoadRowAsync(RegisteredStack stack)
+    {
+        var queue = Panels.ReadAsync(QueueDepth, stack);
+        var executions = Panels.ReadAsync(PodExecutions, stack);
+        var history = Panels.ReadAsync(HistoryFor(TimeSpan.FromDays(7)), stack);
+
+        await Task.WhenAll(queue, executions, history);
+
+        return new Row(stack, queue.Result, executions.Result, history.Result);
+    }
+}

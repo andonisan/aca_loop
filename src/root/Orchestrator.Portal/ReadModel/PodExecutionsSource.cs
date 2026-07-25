@@ -2,6 +2,7 @@ using Azure.Core;
 using Azure.ResourceManager;
 using Azure.ResourceManager.AppContainers;
 using Microsoft.Extensions.Options;
+using Orchestrator.Portal.Presentation;
 using Orchestrator.Portal.Registry;
 
 namespace Orchestrator.Portal.ReadModel;
@@ -15,7 +16,7 @@ namespace Orchestrator.Portal.ReadModel;
 /// ACA still retains. Taking a fixed number also bounds the ARM paging cost of a page that polls.
 /// </para>
 /// </summary>
-public sealed class PodExecutionsSource(
+sealed class PodExecutionsSource(
     TokenCredential credential,
     TimeProvider timeProvider,
     IOptions<ReadModelOptions> options
@@ -52,10 +53,13 @@ public sealed class PodExecutionsSource(
             var startedAt = data.StartOn;
             var endedAt = data.EndOn;
 
+            var rawStatus = data.Status?.ToString() ?? "";
+
             executions.Add(
                 new PodExecution(
                     data.Name,
-                    data.Status?.ToString() ?? "Unknown",
+                    PodExecutionStateParser.Parse(rawStatus),
+                    rawStatus,
                     startedAt,
                     startedAt is null ? null : (endedAt ?? now) - startedAt
                 )

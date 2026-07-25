@@ -1,0 +1,12 @@
+@* A single cell whose source could not be read. Distinct from an empty cell on purpose: in a rollup, "0
+   queued" and "we could not ask" must not look the same, and only the first is safe to act on. The reason
+   goes in the title so the table stays scannable. *@
+
+<span class="badge orange" title="@Reason">
+    <span class="dot"></span>unreadable
+</span>
+
+@code {
+    [Parameter]
+    public string? Reason { get; set; }
+}
