@@ -1,0 +1,52 @@
+@using Orchestrator.Portal.Operations
+
+@* The outcome of a verb, rendered so the three cases cannot be mistaken for one another.
+
+   Refused and Failed are the pair that matters. A refusal is the system working -- the gate did not hold,
+   and the operator needs the live state to know what to do next. A failure is the system not working, and
+   nothing the operator does on the board will help. Rendering both as "didn't work" would send them to the
+   wrong place, so they get different treatments and the refusal carries the state that caused it. *@
+
+<div class="banner @CssClass" data-testid="verb-result" data-outcome="@Result.Outcome.ToString().ToLowerInvariant()">
+    <span>
+        <strong>@Headline</strong>
+        @if (!string.IsNullOrWhiteSpace(Result.Detail))
+        {
+            <span> @Result.Detail</span>
+        }
+        @if (Result.Outcome == VerbOutcome.Refused && !string.IsNullOrWhiteSpace(Result.LiveState))
+        {
+            @* The state as the vendor reports it right now. Without this a refusal tells the operator
+               only that nothing happened, which is not something they can act on. *@
+            <span class="mono" data-testid="verb-live-state"
+                  style="display:block;font-size:var(--fs-12);margin-top:var(--sp-1)">
+                live state: @Result.LiveState
+            </span>
+        }
+    </span>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public required DispatchResult Result { get; set; }
+
+    /// <summary>What the verb was, phrased to start the headline — e.g. "Dispatch".</summary>
+    [Parameter, EditorRequired]
+    public required string Verb { get; set; }
+
+    string CssClass =>
+        Result.Outcome switch
+        {
+            VerbOutcome.Performed => "ok",
+            VerbOutcome.Refused => "warn",
+            _ => "danger",
+        };
+
+    string Headline =>
+        Result.Outcome switch
+        {
+            VerbOutcome.Performed => $"{Verb} performed.",
+            VerbOutcome.Refused => $"{Verb} refused.",
+            _ => $"{Verb} failed.",
+        };
+}

@@ -6,6 +6,7 @@
    viewer is a cost worth paying only where something actually changes. *@
 @rendermode InteractiveServer
 @using Orchestrator.Modules.Backlog.Contracts
+@using Orchestrator.Portal.Operations
 @using Orchestrator.Portal.Presentation
 @using Orchestrator.Portal.ReadModel
 @using Orchestrator.Portal.Registry
@@ -16,6 +17,8 @@
 @inject Func<TimeSpan, RunHistorySource> HistoryFor
 @inject GatedItemsSource GatedItems
 @inject NavigationManager Navigation
+@inject ManualDispatch Dispatch
+@inject CancelExecution Cancel
 
 @* One stack's live state. Every panel goes through IPanelReader, so each renders its own unavailable
    state independently -- one broken Azure source must not cost the page (portal-read-model spec). The
@@ -74,6 +77,10 @@
         <PanelAge Panel="_executions" />
     </div>
     <div class="card-body flush">
+        @if (_cancelResult is not null)
+        {
+            <div class="card-body"><VerbResult Result="_cancelResult" Verb="Cancel" /></div>
+        }
         @if (!_executions.IsAvailable)
         {
             <div class="card-body"><PanelUnavailable Panel="_executions" Source="the Container Apps job" /></div>
@@ -86,7 +93,7 @@
         {
             <table class="dtable">
                 <thead>
-                    <tr><th>Execution</th><th>State</th><th>Started</th><th>Duration</th></tr>
+                    <tr><th>Execution</th><th>State</th><th>Started</th><th>Duration</th><th></th></tr>
                 </thead>
                 <tbody>
                     @foreach (var execution in _executions.Value)
@@ -99,6 +106,23 @@
                             </td>
                             <td>@Format.Absolute(execution.StartedAt)</td>
                             <td>@Format.Duration(execution.Duration)</td>
+                            <td>
+                                @* Offered only for a run that looks stoppable, and only to an Operator. The
+                                   verb re-checks the live state anyway and reports a no-op if it has since
+                                   finished -- the button is an affordance, never the authority. *@
+                                <AuthorizeView Policy="@PortalPolicies.Operate">
+                                    <Authorized>
+                                        @if (execution.IsRunning)
+                                        {
+                                            <button class="btn" data-testid="cancel-execution"
+                                                    disabled="@_verbRunning"
+                                                    @onclick="() => CancelAsync(execution.Name)">
+                                                Cancel
+                                            </button>
+                                        }
+                                    </Authorized>
+                                </AuthorizeView>
+                            </td>
                         </tr>
                     }
                 </tbody>
@@ -113,6 +137,10 @@
         <PanelAge Panel="_gated" />
     </div>
     <div class="card-body flush">
+        @if (_dispatchResult is not null)
+        {
+            <div class="card-body"><VerbResult Result="_dispatchResult" Verb="Dispatch" /></div>
+        }
         @if (!_gated.IsAvailable)
         {
             <div class="card-body"><PanelUnavailable Panel="_gated" Source="the vendor" /></div>
@@ -126,7 +154,7 @@
         {
             <table class="dtable">
                 <thead>
-                    <tr><th>Item</th><th>State</th><th>Assignee</th><th>Updated</th></tr>
+                    <tr><th>Item</th><th>State</th><th>Assignee</th><th>Updated</th><th></th></tr>
                 </thead>
                 <tbody>
                     @foreach (var item in _gated.Value)
@@ -151,6 +179,21 @@
                             <td class="mono">@item.NativeState</td>
                             <td>@(item.Assignee ?? "—")</td>
                             <td>@Format.Absolute(item.UpdatedAt)</td>
+                            <td>
+                                @* Every item in this panel is at a gate by definition, so the button is
+                                   offered for all of them. The verb still re-reads live state before
+                                   enqueuing: this list is cached, and an item can leave its gate between
+                                   the read and the click. *@
+                                <AuthorizeView Policy="@PortalPolicies.Operate">
+                                    <Authorized>
+                                        <button class="btn" data-testid="dispatch-item"
+                                                disabled="@_verbRunning"
+                                                @onclick="() => DispatchAsync(item.ItemId)">
+                                            Dispatch
+                                        </button>
+                                    </Authorized>
+                                </AuthorizeView>
+                            </td>
                         </tr>
                     }
                 </tbody>
@@ -233,8 +276,20 @@
     [Parameter]
     public required string StackId { get; set; }
 
+    /// <summary>Who the audit trail records. Taken from the authenticated principal rather than passed in,
+    /// so a verb cannot be attributed to anyone but the person who clicked it.</summary>
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationState { get; set; }
+
     RegisteredStack? _stack;
     int _windowDays = 7;
+
+    DispatchResult? _dispatchResult;
+    DispatchResult? _cancelResult;
+
+    /// <summary>Disables both verbs while one is in flight. These spend money and stop client work, so
+    /// double-submitting from an impatient second click is worth one boolean to prevent.</summary>
+    bool _verbRunning;
 
     Panel<int> _queue = Panel<int>.Failed("not loaded", default);
     Panel<IReadOnlyList<PodExecution>> _executions =
@@ -280,5 +335,50 @@
             _windowDays = days;
             await LoadAsync();
         }
+    }
+
+    Task DispatchAsync(string itemId) =>
+        RunVerbAsync(
+            async actor => _dispatchResult = await Dispatch.DispatchAsync(_stack!, itemId, actor)
+        );
+
+    Task CancelAsync(string executionName) =>
+        RunVerbAsync(
+            async actor => _cancelResult = await Cancel.CancelAsync(_stack!, executionName, actor)
+        );
+
+    /// <summary>
+    /// The shared shape of both verbs: resolve the actor, run, then re-read. The re-read matters — a verb
+    /// that changed something while the page still shows the pre-verb numbers invites a second click on
+    /// what looks like an unchanged state.
+    /// </summary>
+    async Task RunVerbAsync(Func<string, Task> verb)
+    {
+        _verbRunning = true;
+
+        // Cleared before running rather than after: leaving the previous outcome on screen while the next
+        // verb is in flight would show a stale answer next to a running action.
+        _dispatchResult = null;
+        _cancelResult = null;
+
+        try
+        {
+            await verb(await ActorAsync());
+            await LoadAsync();
+        }
+        finally
+        {
+            _verbRunning = false;
+        }
+    }
+
+    async Task<string> ActorAsync()
+    {
+        var state = AuthenticationState is null ? null : await AuthenticationState;
+
+        // Never anonymous in practice -- the fallback policy requires a signed-in user and the buttons sit
+        // behind the Operate policy. The fallback exists so an audit entry is written even if that ever
+        // stops being true, since an unattributed entry beats none.
+        return state?.User.Identity?.Name ?? "unknown";
     }
 }

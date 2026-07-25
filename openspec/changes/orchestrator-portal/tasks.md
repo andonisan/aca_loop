@@ -23,8 +23,8 @@
 
 ## 4. Operational verbs + audit
 
-- [ ] 4.1 Manual dispatch: resolve `{item, native_state}` through the stack's bundled mapping (reuse Dispatch's resolver), re-read live vendor state, enqueue the canonical message only if the mapped state holds; refusal shows the live state; no vendor write anywhere
-- [ ] 4.2 Cancel: stop a selected ACA job execution; surface the documented retry semantics in the confirmation UI; canceling an already-terminal execution reports no-op
+- [x] 4.1 Manual dispatch: resolve `{item, native_state}` through the stack's bundled mapping (reuse Dispatch's resolver), re-read live vendor state, enqueue the canonical message only if the mapped state holds; refusal shows the live state; no vendor write anywhere
+- [ ] 4.2 Cancel: stop a selected ACA job execution; surface the documented retry semantics in the confirmation UI; canceling an already-terminal execution reports no-op — **partly done**: the verb, the no-op report and a per-execution Cancel button behind `Portal.Operator` all exist, and the performed result states that the item was not moved. What is missing is a *confirmation* step before acting; today the click acts immediately
 - [ ] 4.3 Audit events for every verb (actor object id/UPN, verb, stack, target, timestamp, outcome ∈ {performed, refused, failed}) to the portal's own workspace; audit write failure is flagged on the verb result, never silent; unit-test performed/refused/failed paths
 
 ## 5. Credentials and infrastructure
